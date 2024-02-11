@@ -37,7 +37,7 @@ class ChexpertDataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, idx):
-        img_name = self.df.iloc[idx, 0].split('/', 2)[-1]
+        img_name = self.df.iloc[idx, 0].split('/', 1)[-1]
         img_name = os.path.join(self.base_path, img_name)
         # img_name = os.path.join(self.base_path, self.df.iloc[idx, 0])  # Assuming the first column contains filenames
         image = Image.open(img_name).convert('RGB')  # Adjust the conversion based on your images
