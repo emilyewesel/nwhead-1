@@ -31,7 +31,7 @@ class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True):
         self.df = pd.read_csv(csv_file)
         self.df.dropna(subset=['No Finding'], inplace=True)
-        self.df.dropna(subset=[self.df.columns[1]], inplace=True)
+        self.df.dropna(subset=["Sex"], inplace=True)
         self.df = self.df[self.df.iloc[:, 1].isin(["Female", "Male"])]
         print("are we training", train)
         print(self.df.iloc[:10, 1])
@@ -221,9 +221,9 @@ def main():
         train_dataset.num_classes = 100
     elif args.dataset == "chexpert":
         train_csv = '/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/train.csv'
-        test_csv = '/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/test.csv'
+        test_csv = '/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/valid.csv'
         baase = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
-        baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/test/"
+        baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/valid/"
         train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train=True)
         val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train=False)
         train_dataset.num_classes = 2
