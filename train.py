@@ -443,11 +443,11 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
     optimizer.zero_grad()
     with torch.set_grad_enabled(is_train):
         if is_train:
-            # output = network(img, label)
-            output = F.log_softmax(network.predict(img, label).float(), dim=1)
+            output = network(img, label)
+            # output = F.log_softmax(network.predict(img, label).float(), dim=1)
         else:
-            output = F.log_softmax(network.predict(img, mode).float(), dim=1)
-            # output = network.predict(img, mode)
+            # output = F.log_softmax(network.predict(img, mode).float(), dim=1)
+            output = network.predict(img, mode)
         print("we want to compute loss!!", output, int(label))
         loss = criterion(output, int(label))
         if is_train:
