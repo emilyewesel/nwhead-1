@@ -39,7 +39,9 @@ class ChexpertDataset(Dataset):
         # Modify this line in ChexpertDataset class
         # self.genders = list(self.df.iloc[:, 1])  # Extracting information from the second column
         # Modify this line in ChexpertDataset class
-        self.genders = self.df.iloc[:, 1].map({'Female': 1, 'Male': 0}).tolist()
+        # self.genders = self.df.iloc[:, 1].map({'Female': 1, 'Male': 0}).tolist()
+        self.genders = self.df.iloc[:, 1].map({'Female': 1, 'Male': 0}).astype(int).tolist()
+
 
 
 
