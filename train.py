@@ -261,6 +261,7 @@ def main():
                         feat_dim, 
                         num_classes)
     elif args.train_method == 'nwhead':
+        print(train_dataset)
         network = NWNet(featurizer, 
                         num_classes,
                         support_dataset=train_dataset,
