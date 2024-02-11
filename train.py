@@ -30,6 +30,7 @@ class ChexpertDataset(Dataset):
         self.df = pd.read_csv(csv_file)
         self.base_path = train_base_path if train else test_base_path
         self.transform = transform
+        self.targets = torch.tensor(self.df['No Finding'], dtype=torch.float32)  # Assuming 'No Finding' is your target column
 
     def __len__(self):
         return len(self.df)
@@ -38,12 +39,13 @@ class ChexpertDataset(Dataset):
         img_name = os.path.join(self.base_path, self.df.iloc[idx, 0])  # Assuming the first column contains filenames
         image = Image.open(img_name).convert('RGB')  # Adjust the conversion based on your images
 
-        label = torch.tensor(self.df.iloc[idx]['No Finding'], dtype=torch.float32)
+        label = self.targets[idx]
 
         if self.transform:
             image = self.transform(image)
 
         return image, label
+
 
 
 class Parser(argparse.ArgumentParser):
@@ -214,7 +216,6 @@ def main():
         train_dataset = datasets.FGVCAircraft(args.data_dir, 'trainval', transform=transform_train, download=True)
         val_dataset = datasets.FGVCAircraft(args.data_dir, 'test', transform=transform_test, download=True)
         train_dataset.num_classes = 100
-        train_dataset.targets = train_dataset._labels
     else:
       raise NotImplementedError()
 
