@@ -33,7 +33,7 @@ class ChexpertDataset(Dataset):
         self.df.dropna(subset=['No Finding'], inplace=True)
         self.base_path = train_base_path if train else test_base_path
         self.transform = transform
-        self.targets = torch.tensor(self.df['No Finding'], dtype=torch.float32)  # Assuming 'No Finding' is your target column
+        self.targets = torch.tensor(self.df['No Finding'], dtype=torch.long)  # Assuming 'No Finding' is your target column
 
     def __len__(self):
         return len(self.df)
