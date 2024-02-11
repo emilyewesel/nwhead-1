@@ -426,7 +426,9 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         gts.append(step_res['gt'])
         if i == args.num_val_steps_per_epoch:
             break
-    
+    if not probs or not gts:
+        print("Warning: Empty list encountered during evaluation.", "probs", len(probs), "gts", len(gts))
+        return 0.0
     ece = (ECELoss()(torch.cat(probs, dim=0), torch.cat(gts, dim=0)) * 100).item()
     if args.train_method == 'fchead':
         args.val_metrics['ece:val'].update_state(ece, 1)
