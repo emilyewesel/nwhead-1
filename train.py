@@ -32,6 +32,8 @@ class ChexpertDataset(Dataset):
         self.df = pd.read_csv(csv_file)
         self.df.dropna(subset=['No Finding'], inplace=True)
         self.df.dropna(subset=[self.df.columns[1]], inplace=True)
+        self.df = self.df[self.df.iloc[:, 1].isin(["Female", "Male"])]
+
         # self.df.dropna(subset=['Sex'], inplace=True)
         self.base_path = train_base_path if train else test_base_path
         self.transform = transform
