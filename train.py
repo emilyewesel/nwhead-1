@@ -31,9 +31,11 @@ class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True):
         self.df = pd.read_csv(csv_file)
         self.df.dropna(subset=['No Finding'], inplace=True)
+        self.df.dropna(subset=['Sex'], inplace=True)
         self.base_path = train_base_path if train else test_base_path
         self.transform = transform
         self.targets = torch.tensor(self.df['No Finding'], dtype=torch.long)  # Assuming 'No Finding' is your target column
+        self.genders = list(self.df['Sex'])  # Extracting gender information
 
     def __len__(self):
         return len(self.df)
@@ -45,11 +47,12 @@ class ChexpertDataset(Dataset):
         image = Image.open(img_name).convert('RGB')  # Adjust the conversion based on your images
 
         label = self.targets[idx]
+        gender = self.genders[idx]
 
         if self.transform:
             image = self.transform(image)
 
-        return image, label
+        return image, label, gender
 
 
 
@@ -210,6 +213,7 @@ def main():
         train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train=True)
         val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train=False)
         train_dataset.num_classes = 2
+        genders = train_dataset.genders
         # train_dataset.targets = train_dataset._labels  # Add this line
 
     elif args.dataset == 'flower':
@@ -261,7 +265,8 @@ def main():
                         feat_dim, 
                         num_classes)
     elif args.train_method == 'nwhead':
-        print(train_dataset)
+        print(len(train_dataset))
+        print(len(genders))
         network = NWNet(featurizer, 
                         num_classes,
                         support_dataset=train_dataset,
@@ -270,6 +275,7 @@ def main():
                         kernel_type=args.kernel_type,
                         n_shot=args.n_shot,
                         n_way=args.n_way,
+                        env_array = genders,
                         debug_mode=args.debug_mode)
     else:
         raise NotImplementedError()
