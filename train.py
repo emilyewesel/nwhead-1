@@ -32,6 +32,7 @@ class ChexpertDataset(Dataset):
         self.df = pd.read_csv(csv_file)
         self.df.dropna(subset=['No Finding'], inplace=True)
         self.df.dropna(subset=[self.df.columns[1]], inplace=True)
+        print(self.df.iloc[:10, 1])
         self.df = self.df[self.df.iloc[:, 1].isin(["Female", "Male"])]
 
         # self.df.dropna(subset=['Sex'], inplace=True)
@@ -288,7 +289,7 @@ def main():
                         kernel_type=args.kernel_type,
                         n_shot=args.n_shot,
                         n_way=args.n_way,
-                        env_array = genders,
+                        # env_array = genders,
                         debug_mode=args.debug_mode)
     else:
         raise NotImplementedError()
@@ -426,6 +427,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         gts.append(step_res['gt'])
         if i == args.num_val_steps_per_epoch:
             break
+    print(len(probs), "gts", len(gts))
     if not probs or not gts:
         print("Warning: Empty list encountered during evaluation.", "probs", len(probs), "gts", len(gts))
         return 0.0
