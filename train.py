@@ -442,7 +442,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
 
 def fc_step(batch, network, criterion, optimizer, args, is_train=True):
     '''Train/val for one step.'''
-    img, label = batch
+    img, label, gender = batch
     img = img.float().to(args.device)
     label = label.to(args.device)
     optimizer.zero_grad()
