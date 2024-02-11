@@ -448,7 +448,7 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
         else:
             # output = F.log_softmax(network.predict(img, mode).float(), dim=1)
             output = network.predict(img, mode)
-        print("we want to compute loss!!", output, label)
+        # print("we want to compute loss!!", output, label)
         loss = criterion(output, label)
         if is_train:
             loss.backward()
