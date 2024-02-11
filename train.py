@@ -32,9 +32,9 @@ class ChexpertDataset(Dataset):
         self.df = pd.read_csv(csv_file)
         self.df.dropna(subset=['No Finding'], inplace=True)
         self.df.dropna(subset=[self.df.columns[1]], inplace=True)
-        print(self.df.iloc[:10, 1])
         self.df = self.df[self.df.iloc[:, 1].isin(["Female", "Male"])]
-
+        print("are we training", train)
+        print(self.df.iloc[:10, 1])
         # self.df.dropna(subset=['Sex'], inplace=True)
         self.base_path = train_base_path if train else test_base_path
         self.transform = transform
@@ -280,7 +280,7 @@ def main():
                         num_classes)
     elif args.train_method == 'nwhead':
         print(len(train_dataset))
-        print(len(genders), genders[0])
+        print(len(genders), genders[0:20])
         network = NWNet(featurizer, 
                         num_classes,
                         support_dataset=train_dataset,
@@ -289,7 +289,7 @@ def main():
                         kernel_type=args.kernel_type,
                         n_shot=args.n_shot,
                         n_way=args.n_way,
-                        # env_array = genders,
+                        env_array = genders,
                         debug_mode=args.debug_mode)
     else:
         raise NotImplementedError()
@@ -413,6 +413,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
 
     probs = []
     gts = []
+    print(tqdm(enumerate(val_loader)))
     for i, batch in tqdm(enumerate(val_loader), 
         total=min(len(val_loader), args.num_val_steps_per_epoch)):
         if args.train_method == 'fchead':
