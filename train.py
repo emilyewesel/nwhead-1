@@ -24,6 +24,8 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from PIL import Image
+import torch.nn.functional as F
+
 
 class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True):
@@ -443,7 +445,8 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
         if is_train:
             output = network(img, label)
         else:
-            output = network.predict(img, mode)
+            output = F.log_softmax(network.predict(img, mode), dim=1)
+            # output = network.predict(img, mode)
         loss = criterion(output, label)
         if is_train:
             loss.backward()
