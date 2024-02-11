@@ -10,8 +10,8 @@ from pprint import pprint
 import json
 import wandb
 
-from data.bird import Cub200Dataset
-from data.dog import StanfordDogDataset
+# from data.bird import Cub200Dataset
+# from data.dog import StanfordDogDataset
 from util.metric import Metric, ECELoss
 from util.utils import parse_bool, ParseKwargs, summary, save_checkpoint, initialize_wandb
 from util import metric
@@ -168,12 +168,12 @@ def main():
         train_dataset = datasets.CIFAR100(args.data_dir, True, transform_train, download=True)
         val_dataset = datasets.CIFAR100(args.data_dir, False, transform_test, download=True)
         train_dataset.num_classes = 100
-    elif args.dataset == 'bird':
-        train_dataset = Cub200Dataset(args.data_dir, True, transform_train)
-        val_dataset = Cub200Dataset(args.data_dir, False, transform_test)
-    elif args.dataset == 'dog':
-        train_dataset = StanfordDogDataset(args.data_dir, True, transform_train)
-        val_dataset = StanfordDogDataset(args.data_dir, False, transform_test)
+    # elif args.dataset == 'bird':
+    #     train_dataset = Cub200Dataset(args.data_dir, True, transform_train)
+    #     val_dataset = Cub200Dataset(args.data_dir, False, transform_test)
+    # elif args.dataset == 'dog':
+    #     train_dataset = StanfordDogDataset(args.data_dir, True, transform_train)
+    #     val_dataset = StanfordDogDataset(args.data_dir, False, transform_test)
     elif args.dataset == 'flower':
         train_dataset = datasets.Flowers102(args.data_dir, 'train', transform_train, download=True)
         val_dataset = datasets.Flowers102(args.data_dir, 'test', transform_test, download=True)
