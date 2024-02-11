@@ -35,7 +35,10 @@ class ChexpertDataset(Dataset):
         self.base_path = train_base_path if train else test_base_path
         self.transform = transform
         self.targets = torch.tensor(self.df['No Finding'], dtype=torch.long)  # Assuming 'No Finding' is your target column
-        self.genders = list(self.df['Sex'])  # Extracting gender information
+        # self.genders = list(self.df['Sex'])  # Extracting gender information
+        # Modify this line in ChexpertDataset class
+        self.genders = list(self.df.iloc[:, 1])  # Extracting information from the second column
+
 
     def __len__(self):
         return len(self.df)
