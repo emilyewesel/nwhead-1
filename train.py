@@ -203,6 +203,7 @@ def main():
         train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train=True)
         val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train=False)
         train_dataset.num_classes = 2
+        train_dataset.targets = train_dataset._labels  # Add this line
 
     elif args.dataset == 'flower':
         train_dataset = datasets.Flowers102(args.data_dir, 'train', transform_train, download=True)
