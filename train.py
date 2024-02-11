@@ -269,7 +269,7 @@ def main():
                         num_classes)
     elif args.train_method == 'nwhead':
         print(len(train_dataset))
-        print(len(genders))
+        print(len(genders), genders[0])
         network = NWNet(featurizer, 
                         num_classes,
                         support_dataset=train_dataset,
