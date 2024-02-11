@@ -36,7 +36,9 @@ class ChexpertDataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.base_path, self.df.iloc[idx, 0])  # Assuming the first column contains filenames
+        img_name = self.df.iloc[idx, 0].split('/', 1)[-1]
+        img_name = os.path.join(self.base_path, img_name)
+        # img_name = os.path.join(self.base_path, self.df.iloc[idx, 0])  # Assuming the first column contains filenames
         image = Image.open(img_name).convert('RGB')  # Adjust the conversion based on your images
 
         label = self.targets[idx]
@@ -200,8 +202,8 @@ def main():
     elif args.dataset == "chexpert":
         train_csv = '/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/train.csv'
         test_csv = '/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/test.csv'
-        baase = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/train/"
-        baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/test/"
+        baase = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
+        baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
         train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train=True)
         val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train=False)
         train_dataset.num_classes = 2
