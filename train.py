@@ -223,7 +223,7 @@ def main():
         train_csv = '/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/train.csv'
         test_csv = '/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/valid.csv'
         baase = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
-        baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/valid/"
+        baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
         train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train=True)
         val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train=False)
         train_dataset.num_classes = 2
