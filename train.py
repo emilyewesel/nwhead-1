@@ -18,6 +18,33 @@ from util import metric
 from model import load_model
 from nwhead.nw import NWNet
 from fchead.fc import FCNet
+import pandas as pd
+import torch
+from torch.utils.data import Dataset
+from torchvision import transforms
+from torch.utils.data import DataLoader
+from PIL import Image
+
+class ChexpertDataset(Dataset):
+    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True):
+        self.df = pd.read_csv(csv_file)
+        self.base_path = train_base_path if train else test_base_path
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, idx):
+        img_name = os.path.join(self.base_path, self.df.iloc[idx, 0])  # Assuming the first column contains filenames
+        image = Image.open(img_name).convert('RGB')  # Adjust the conversion based on your images
+
+        label = torch.tensor(self.df.iloc[idx]['No Finding'], dtype=torch.float32)
+
+        if self.transform:
+            image = self.transform(image)
+
+        return image, label
+
 
 class Parser(argparse.ArgumentParser):
     def __init__(self):
@@ -168,12 +195,15 @@ def main():
         train_dataset = datasets.CIFAR100(args.data_dir, True, transform_train, download=True)
         val_dataset = datasets.CIFAR100(args.data_dir, False, transform_test, download=True)
         train_dataset.num_classes = 100
-    # elif args.dataset == 'bird':
-    #     train_dataset = Cub200Dataset(args.data_dir, True, transform_train)
-    #     val_dataset = Cub200Dataset(args.data_dir, False, transform_test)
-    # elif args.dataset == 'dog':
-    #     train_dataset = StanfordDogDataset(args.data_dir, True, transform_train)
-    #     val_dataset = StanfordDogDataset(args.data_dir, False, transform_test)
+    elif args.dataset == "chexpert":
+        train_csv = '/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/train.csv'
+        test_csv = '/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/test.csv'
+        baase = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/train/"
+        baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/test/"
+        train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train=True)
+        val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train=False)
+        train_dataset.num_classes = 2
+
     elif args.dataset == 'flower':
         train_dataset = datasets.Flowers102(args.data_dir, 'train', transform_train, download=True)
         val_dataset = datasets.Flowers102(args.data_dir, 'test', transform_test, download=True)
