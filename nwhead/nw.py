@@ -284,7 +284,9 @@ class NWHead(nn.Module):
         :return: log of softmaxed probabilities (b, num_classes)
         """
         batch_size = len(x)
-        sy = F.one_hot(sy, self.n_classes).float()
+        sy = F.one_hot(sy.long(), num_classes=self.n_classes).float()
+
+        # sy = F.one_hot(sy, self.n_classes).float()
         if len(sx.shape) == len(x.shape):
             sx = sx[None].expand(batch_size, *sx.shape)
             sy = sy[None].expand(batch_size, *sy.shape)
