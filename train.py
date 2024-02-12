@@ -59,6 +59,7 @@ class ChexpertDataset(Dataset):
         img_name = os.path.join(self.base_path, img_name)
         # img_name = os.path.join(self.base_path, self.df.iloc[idx, 0])  # Assuming the first column contains filenames
         image = Image.open(img_name).convert('RGB')  # Adjust the conversion based on your images
+        print(image)
 
         label = self.targets[idx]
         gender = self.genders[idx]
@@ -449,6 +450,7 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
     optimizer.zero_grad()
     with torch.set_grad_enabled(is_train):
         output = network(img)
+        print("computing loss with ", output, label)
         loss = criterion(output, label)
         if is_train:
             loss.backward()
