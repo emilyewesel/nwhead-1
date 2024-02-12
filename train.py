@@ -122,7 +122,7 @@ class Parser(argparse.ArgumentParser):
                   default=None, help='Number of training classes per query in support')
 
         # Weights & Biases
-        self.add_bool_arg('use_wandb', False)
+        self.add_bool_arg('use_wandb', True)
         self.add_argument('--wandb_api_key_path', type=str,
                             help="Path to Weights & Biases API Key. If use_wandb is set to True and this argument is not specified, user will be prompted to authenticate.")
         self.add_argument('--wandb_kwargs', nargs='*', action=ParseKwargs, default={},
@@ -338,6 +338,7 @@ def main():
 
     if args.use_wandb:
         initialize_wandb(args)
+        print("initilaized wandb")
 
     # Training loop
     start_epoch = 1
