@@ -288,7 +288,7 @@ def main():
                         num_classes)
     elif args.train_method == 'nwhead':
         print(len(train_dataset))
-        print(len(genders), genders[0:20])
+        # print(len(genders), genders[0:20])
         network = NWNet(featurizer, 
                         num_classes,
                         support_dataset=train_dataset,
@@ -297,7 +297,7 @@ def main():
                         kernel_type=args.kernel_type,
                         n_shot=args.n_shot,
                         n_way=args.n_way,
-                        env_array = genders,
+                        # env_array = genders,
                         debug_mode=args.debug_mode)
     else:
         raise NotImplementedError()
