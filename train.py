@@ -60,12 +60,12 @@ class ChexpertDataset(Dataset):
         img_name = os.path.join(self.base_path, img_name)
         # img_name = os.path.join(self.base_path, self.df.iloc[idx, 0])  # Assuming the first column contains filenames
         image = Image.open(img_name).convert('RGB')  # Adjust the conversion based on your images
-        image_array = np.array(image)
+        # image_array = np.array(image)
 
-        # Display the image using Matplotlib
-        plt.imshow(image_array)
-        plt.axis('off')  # Optional: Turn off axis labels
-        plt.show()
+        # # Display the image using Matplotlib
+        # plt.imshow(image_array)
+        # plt.axis('off')  # Optional: Turn off axis labels
+        # plt.show()
 
         label = self.targets[idx]
         gender = self.genders[idx]
