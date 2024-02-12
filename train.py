@@ -9,6 +9,7 @@ import argparse
 from pprint import pprint
 import json
 import wandb
+import matplotlib.pyplot as plt
 
 # from data.bird import Cub200Dataset
 # from data.dog import StanfordDogDataset
