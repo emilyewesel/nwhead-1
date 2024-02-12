@@ -61,7 +61,7 @@ class ChexpertDataset(Dataset):
         # img_name = os.path.join(self.base_path, self.df.iloc[idx, 0])  # Assuming the first column contains filenames
         image = Image.open(img_name).convert('RGB')  # Adjust the conversion based on your images
         image_array = np.array(image)
-        print(image_array)
+        # print(image_array)
 
         # # Display the image using Matplotlib
         # plt.imshow(image_array)
