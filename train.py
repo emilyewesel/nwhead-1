@@ -451,7 +451,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
 
 def fc_step(batch, network, criterion, optimizer, args, is_train=True):
     '''Train/val for one step.'''
-    img, label, gender = batch
+    img, label, gender = batch #gender never used 
     img = img.float().to(args.device)
     label = label.to(args.device)
     optimizer.zero_grad()
@@ -472,19 +472,16 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
 
 def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='random'):
     '''Train/val for one step.'''
-    img, label, gender = batch
+    img, label, gender = batch #gender never used
     img = img.float().to(args.device)
     label = label.to(args.device)
     optimizer.zero_grad()
     with torch.set_grad_enabled(is_train):
         if is_train:
             output = network(img, label)
-            # output = F.log_softmax(network.predict(img, label).float(), dim=1)
         else:
-            # output = F.log_softmax(network.predict(img, mode).float(), dim=1)
             output = network.predict(img, mode)
-        # print("we want to compute loss!!", output, label)
-        print("we are computing loss", output, label)
+        print("we are computing loss", output, label) # always gives the vector tensor([[-27.6310,   0.0000]]
         loss = criterion(output, label)
         if is_train:
             loss.backward()
