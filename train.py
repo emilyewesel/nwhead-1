@@ -479,6 +479,7 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
     with torch.set_grad_enabled(is_train):
         if is_train:
             output = network(img, label)
+            print(img)
         else:
             output = network.predict(img, mode)
         print("we are computing loss", output, label) # always gives the vector tensor([[-27.6310,   0.0000]]
