@@ -112,9 +112,9 @@ class Parser(argparse.ArgumentParser):
         self.add_argument('--batch_size', type=int,
                   default=32, help='Batch size')
         self.add_argument('--num_steps_per_epoch', type=int,
-                  default=10000000, help='Num steps per epoch')
+                  default=100000, help='Num steps per epoch')
         self.add_argument('--num_val_steps_per_epoch', type=int,
-                  default=10000000, help='Num validation steps per epoch')
+                  default=100000, help='Num validation steps per epoch')
         self.add_argument('--num_epochs', type=int, default=200,
                   help='Total training epochs')
         self.add_argument('--scheduler_milestones', nargs='+', type=int,
