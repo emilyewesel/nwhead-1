@@ -477,6 +477,7 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
     img, label, gender = batch #gender never used
     img = img.float().to(args.device)
     label = label.to(args.device)
+    gender = gender.to(args.device)
     optimizer.zero_grad()
     with torch.set_grad_enabled(is_train):
         if is_train:
