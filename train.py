@@ -459,7 +459,7 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
     optimizer.zero_grad()
     with torch.set_grad_enabled(is_train):
         output = network(img)
-        print("computing loss with ", output, label)
+        # print("computing loss with ", output, label)
         loss = criterion(output, label)
         if is_train:
             loss.backward()
