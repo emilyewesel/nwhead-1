@@ -60,7 +60,7 @@ class ChexpertDataset(Dataset):
         img_name = os.path.join(self.base_path, img_name)
         # img_name = os.path.join(self.base_path, self.df.iloc[idx, 0])  # Assuming the first column contains filenames
         image = Image.open(img_name).convert('RGB')  # Adjust the conversion based on your images
-        image_array = np.array(image)
+        
         # print(image_array)
 
         # # Display the image using Matplotlib
@@ -73,6 +73,8 @@ class ChexpertDataset(Dataset):
 
         if self.transform:
             image = self.transform(image)
+        image_array = np.array(image)
+        print(image_array)
 
         return image, label, gender
 
@@ -282,7 +284,7 @@ def main():
         for param in featurizer.parameters():
             param.requires_grad = False
     
-    if args.train_method == 'fchead':
+    if args.train_method == 'fchead' or True:
         network = FCNet(featurizer, 
                         feat_dim, 
                         num_classes)
