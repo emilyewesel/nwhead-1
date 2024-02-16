@@ -31,7 +31,13 @@ import torch.nn.functional as F
 class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True):
         self.df = pd.read_csv(csv_file)
-        self.df.dropna(subset=['Cardiomegaly'], inplace=True)
+        #make argument the class name
+        #impute zeros into no finding if there is nothing
+        #only keep frontal view from the column Frontal/Lateral
+        #test csv file has the info in the name
+        self.df["No Finding"].fillna(0, inplace=True)
+        self.df = self.df[self.df['Orientation'] == 'Frontal']
+        # self.df.dropna(subset=['No Finding'], inplace=True)
         self.df.dropna(subset=["Sex"], inplace=True)
         self.df = self.df[self.df.iloc[:, 1].isin(["Female", "Male"])]
         print("are we training", train)
@@ -40,9 +46,9 @@ class ChexpertDataset(Dataset):
         self.base_path = train_base_path if train else test_base_path
         self.transform = transform
         # self.df = self.df[self.df["Cardiomegaly"]].isin([0.0, 1.0])
-        self.df = self.df[self.df.Cardiomegaly != -1]
-        print(self.df["Cardiomegaly"])
-        self.targets = torch.tensor(self.df['Cardiomegaly'].values, dtype=torch.long)  # Assuming 'No Finding' is your target column
+        # self.df = self.df[self.df.Cardiomegaly != -1]
+        # print(self.df["Cardiomegaly"])
+        self.targets = torch.tensor(self.df['No Finding'].values, dtype=torch.long)  # Assuming 'No Finding' is your target column
         # self.genders = list(self.df['Sex'])  # Extracting gender information
         # Modify this line in ChexpertDataset class
         # self.genders = list(self.df.iloc[:, 1])  # Extracting information from the second column
@@ -488,7 +494,7 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
             # print(img)
         else:
             output = network.predict(img, mode)
-        print("we are computing loss", output, label) # always gives the vector tensor([[-27.6310,   0.0000]]
+        # print("we are computing loss", output, label) # always gives the vector tensor([[-27.6310,   0.0000]]
         loss = criterion(output, label)
         if is_train:
             loss.backward()
