@@ -74,7 +74,7 @@ class ChexpertDataset(Dataset):
         if self.transform:
             image = self.transform(image)
         image_array = np.array(image)
-        print(image_array)
+        # print(image_array)
 
         return image, label, gender
 
