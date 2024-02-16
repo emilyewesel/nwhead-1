@@ -112,7 +112,7 @@ class Parser(argparse.ArgumentParser):
         self.add_argument('--batch_size', type=int,
                   default=32, help='Batch size')
         self.add_argument('--num_steps_per_epoch', type=int,
-                  default=100000, help='Num steps per epoch')
+                  default=1000, help='Num steps per epoch')
         self.add_argument('--num_val_steps_per_epoch', type=int,
                   default=100000, help='Num validation steps per epoch')
         self.add_argument('--num_epochs', type=int, default=200,
@@ -136,7 +136,7 @@ class Parser(argparse.ArgumentParser):
         self.add_argument('--proj_dim', type=int,
                   default=0)
         self.add_argument('--n_shot', type=int,
-                  default=32, help='Number of examples per class in support')
+                  default=2, help='Number of examples per class in support')
         self.add_argument('--n_way', type=int,
                   default=None, help='Number of training classes per query in support')
 
