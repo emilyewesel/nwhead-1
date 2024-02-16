@@ -39,6 +39,7 @@ class ChexpertDataset(Dataset):
         # self.df.dropna(subset=['Sex'], inplace=True)
         self.base_path = train_base_path if train else test_base_path
         self.transform = transform
+        print(self.df.columns)
         self.targets = torch.tensor(self.df['Cardiomegaly'], dtype=torch.long)  # Assuming 'No Finding' is your target column
         # self.genders = list(self.df['Sex'])  # Extracting gender information
         # Modify this line in ChexpertDataset class
