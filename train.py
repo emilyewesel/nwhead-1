@@ -283,8 +283,8 @@ def main():
     if args.freeze_featurizer:
         for param in featurizer.parameters():
             param.requires_grad = False
-    
-    if args.train_method == 'fchead' or True:
+    args.train_method = 'fchead'
+    if args.train_method == 'fchead':
         network = FCNet(featurizer, 
                         feat_dim, 
                         num_classes)
