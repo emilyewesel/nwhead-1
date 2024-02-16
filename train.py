@@ -31,7 +31,7 @@ import torch.nn.functional as F
 class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True):
         self.df = pd.read_csv(csv_file)
-        self.df.dropna(subset=['No Finding'], inplace=True)
+        self.df.dropna(subset=['Cardiomegaly'], inplace=True)
         self.df.dropna(subset=["Sex"], inplace=True)
         self.df = self.df[self.df.iloc[:, 1].isin(["Female", "Male"])]
         print("are we training", train)
@@ -39,14 +39,14 @@ class ChexpertDataset(Dataset):
         # self.df.dropna(subset=['Sex'], inplace=True)
         self.base_path = train_base_path if train else test_base_path
         self.transform = transform
-        self.targets = torch.tensor(self.df['No Finding'], dtype=torch.long)  # Assuming 'No Finding' is your target column
+        self.targets = torch.tensor(self.df['Cardiomegaly'], dtype=torch.long)  # Assuming 'No Finding' is your target column
         # self.genders = list(self.df['Sex'])  # Extracting gender information
         # Modify this line in ChexpertDataset class
         # self.genders = list(self.df.iloc[:, 1])  # Extracting information from the second column
         # Modify this line in ChexpertDataset class
         # self.genders = self.df.iloc[:, 1].map({'Female': 1, 'Male': 0}).tolist()
         self.genders = self.df.iloc[:, 1].dropna().map({'Female': 1, 'Male': 0}).astype(int).tolist()
-
+        print(len(self.targets), sum(self.targets), np.unique(self.targets))
         # self.genders = self.df.iloc[:, 1].map({'Female': 1, 'Male': 0}).astype(int).tolist()
 
 
