@@ -107,7 +107,7 @@ class Parser(argparse.ArgumentParser):
 
         # Machine learning parameters
         self.add_argument('--dataset', type=str, required=True)
-        self.add_argument('--lr', type=float, default=1e-3,
+        self.add_argument('--lr', type=float, default=1e-2,
                   help='Learning rate')
         self.add_argument('--batch_size', type=int,
                   default=32, help='Batch size')
