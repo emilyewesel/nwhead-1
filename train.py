@@ -352,6 +352,18 @@ def main():
             'ece:val:ensemble',
             'ece:val:knn',
             'ece:val:hnsw',
+            'acc:val:random:male',  # New metric for male accuracy
+            'acc:val:full:male',    # New metric for male accuracy
+            'acc:val:cluster:male', # New metric for male accuracy
+            'ece:val:random:male',  # New metric for male ECE
+            'ece:val:full:male',    # New metric for male ECE
+            'ece:val:cluster:male', # New metric for male ECE
+            'acc:val:random:female',  # New metric for female accuracy
+            'acc:val:full:female',    # New metric for female accuracy
+            'acc:val:cluster:female', # New metric for female accuracy
+            'ece:val:random:female',  # New metric for female ECE
+            'ece:val:full:female',    # New metric for female ECE
+            'ece:val:cluster:female', # New metric for female ECE
         ] 
     else:
         list_of_val_metrics = [
@@ -447,11 +459,16 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     '''Eval for one epoch.'''
     network.eval()
 
-    probs = []
-    gts = []
-    print(tqdm(enumerate(val_loader)))
+    probs = {'male': [], 'female': []}
+    gts = {'male': [], 'female': []}
+
     for i, batch in tqdm(enumerate(val_loader), 
         total=min(len(val_loader), args.num_val_steps_per_epoch)):
+        img, label, gender = batch
+        img = img.float().to(args.device)
+        label = label.to(args.device)
+        gender = gender.to(args.device)
+
         if args.train_method == 'fchead':
             step_res = fc_step(batch, network, criterion, optimizer, args, is_train=False)
             args.val_metrics['loss:val'].update_state(step_res['loss'], step_res['batch_size'])
@@ -460,20 +477,35 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=False, mode=mode)
             args.val_metrics[f'loss:val:{mode}'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics[f'acc:val:{mode}'].update_state(step_res['acc'], step_res['batch_size'])
-        probs.append(step_res['prob'])
-        gts.append(step_res['gt'])
+
+            # Separate metrics for males and females
+            for j in range(len(gender)):
+                gender_str = 'male' if gender[j] == 0 else 'female'
+                probs[gender_str].append(step_res['prob'][j].unsqueeze(0))
+                gts[gender_str].append(step_res['gt'][j].unsqueeze(0))
+
         if i == args.num_val_steps_per_epoch:
             break
-    print(len(probs), "gts", len(gts))
-    if not probs or not gts:
-        print("Warning: Empty list encountered during evaluation.", "probs", len(probs), "gts", len(gts))
-        return 0.0
-    ece = (ECELoss()(torch.cat(probs, dim=0), torch.cat(gts, dim=0)) * 100).item()
+
+    # Log metrics for males
+    male_probs = torch.cat(probs['male'], dim=0)
+    male_gts = torch.cat(gts['male'], dim=0)
+    male_acc = metric.acc(male_probs.argmax(-1), male_gts)
+    male_ece = (ECELoss()(male_probs, male_gts) * 100).item()
+    args.val_metrics[f'acc:val:{mode}:male'].update_state(male_acc * 100, 1)
+    args.val_metrics[f'ece:val:{mode}:male'].update_state(male_ece, 1)
+
+    # Log metrics for females
+    female_probs = torch.cat(probs['female'], dim=0)
+    female_gts = torch.cat(gts['female'], dim=0)
+    female_acc = metric.acc(female_probs.argmax(-1), female_gts)
+    female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
+    args.val_metrics[f'acc:val:{mode}:female'].update_state(female_acc * 100, 1)
+    args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
+
     if args.train_method == 'fchead':
-        args.val_metrics['ece:val'].update_state(ece, 1)
         return args.val_metrics['acc:val'].result()
     else:
-        args.val_metrics[f'ece:val:{mode}'].update_state(ece, 1)
         return args.val_metrics[f'acc:val:{mode}'].result()
 
 def fc_step(batch, network, criterion, optimizer, args, is_train=True):
