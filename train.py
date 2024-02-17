@@ -343,6 +343,15 @@ def main():
             'ece:val:random',
             'ece:val:full',
             'ece:val:cluster',
+            'loss:val:ensemble',
+            'loss:val:knn',
+            'loss:val:hnsw',
+            'acc:val:ensemble',
+            'acc:val:knn',
+            'acc:val:hnsw',
+            'ece:val:ensemble',
+            'ece:val:knn',
+            'ece:val:hnsw',
         ] 
     else:
         list_of_val_metrics = [
@@ -373,6 +382,13 @@ def main():
             acc1 = eval_epoch(val_loader, network, criterion, optimizer, args, mode='full')
             print('Evaluating on cluster mode...')
             eval_epoch(val_loader, network, criterion, optimizer, args, mode='cluster')
+            print('Evaluating on ensemble mode...')
+            eval_epoch(val_loader, network, criterion, optimizer, args, mode='ensemble')
+            print('Evaluating on knn mode...')
+            eval_epoch(val_loader, network, criterion, optimizer, args, mode='knn')
+            print('Evaluating on hnsw mode...')
+            eval_epoch(val_loader, network, criterion, optimizer, args, mode='hnsw')
+
         else:
             acc1 = eval_epoch(val_loader, network, criterion, optimizer, args)
 

@@ -131,6 +131,7 @@ class NWNet(nn.Module):
             One of ['random', 'full', 'cluster', 'ensemble', 'knn', 'hnsw']
         '''
         qfeat = self.featurizer(x)
+        print(qfeat)
         sfeat, sy = self.support_eval.get_support(mode, x=qfeat)
 
         if self.debug_mode:
