@@ -364,6 +364,24 @@ def main():
             'ece:val:random:female',  # New metric for female ECE
             'ece:val:full:female',    # New metric for female ECE
             'ece:val:cluster:female', # New metric for female ECE
+            'loss:val:ensemble:male',
+            'loss:val:knn:male',
+            'loss:val:hnsw:male',
+            'acc:val:ensemble:male',
+            'acc:val:knn:male',
+            'acc:val:hnsw:male',
+            'ece:val:ensemble:male',
+            'ece:val:knn:male',
+            'ece:val:hnsw:male',
+            'loss:val:ensemble:female',
+            'loss:val:knn:female',
+            'loss:val:hnsw:female',
+            'acc:val:ensemble:female',
+            'acc:val:knn:female',
+            'acc:val:hnsw:female',
+            'ece:val:ensemble:female',
+            'ece:val:knn:female',
+            'ece:val:hnsw:female',
         ] 
     else:
         list_of_val_metrics = [
