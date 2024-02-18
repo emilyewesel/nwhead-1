@@ -510,20 +510,26 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     male_gts = torch.cat(gts['male'], dim=0)
     male_acc = metric.acc(male_probs.argmax(-1), male_gts)
     male_ece = (ECELoss()(male_probs, male_gts) * 100).item()
-    args.val_metrics[f'acc:val:{mode}:male'].update_state(male_acc * 100, 1)
-    args.val_metrics[f'ece:val:{mode}:male'].update_state(male_ece, 1)
+    
 
     # Log metrics for females
     female_probs = torch.cat(probs['female'], dim=0)
     female_gts = torch.cat(gts['female'], dim=0)
     female_acc = metric.acc(female_probs.argmax(-1), female_gts)
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
-    args.val_metrics[f'acc:val:{mode}:female'].update_state(female_acc * 100, 1)
-    args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
-
+    
     if args.train_method == 'fchead':
+        args.val_metrics[f'acc:val:male'].update_state(male_acc * 100, 1)
+        args.val_metrics[f'ece:val:male'].update_state(male_ece, 1)
+        args.val_metrics[f'acc:val:female'].update_state(female_acc * 100, 1)
+        args.val_metrics[f'ece:val:female'].update_state(female_ece, 1)
         return args.val_metrics['acc:val'].result()
     else:
+        args.val_metrics[f'acc:val:{mode}:male'].update_state(male_acc * 100, 1)
+        args.val_metrics[f'ece:val:{mode}:male'].update_state(male_ece, 1)
+        args.val_metrics[f'acc:val:{mode}:female'].update_state(female_acc * 100, 1)
+        args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
+
         return args.val_metrics[f'acc:val:{mode}'].result()
 
 def fc_step(batch, network, criterion, optimizer, args, is_train=True):
