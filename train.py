@@ -491,6 +491,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             step_res = fc_step(batch, network, criterion, optimizer, args, is_train=False)
             args.val_metrics['loss:val'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics['acc:val'].update_state(step_res['acc'], step_res['batch_size'])
+            for j in range(len(gender)):
+                gender_str = 'male' if gender[j] == 0 else 'female'
+                probs[gender_str].append(step_res['prob'][j].unsqueeze(0))
+                gts[gender_str].append(step_res['gt'][j].unsqueeze(0))
         else:
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=False, mode=mode)
             args.val_metrics[f'loss:val:{mode}'].update_state(step_res['loss'], step_res['batch_size'])
