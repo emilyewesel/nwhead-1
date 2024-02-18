@@ -292,7 +292,7 @@ def main():
     if args.freeze_featurizer:
         for param in featurizer.parameters():
             param.requires_grad = False
-    # args.train_method = 'fchead'
+    args.train_method = 'fchead'
     if args.train_method == 'fchead':
         network = FCNet(featurizer, 
                         feat_dim, 
@@ -364,18 +364,12 @@ def main():
             'ece:val:random:female',  # New metric for female ECE
             'ece:val:full:female',    # New metric for female ECE
             'ece:val:cluster:female', # New metric for female ECE
-            'loss:val:ensemble:male',
-            'loss:val:knn:male',
-            'loss:val:hnsw:male',
             'acc:val:ensemble:male',
             'acc:val:knn:male',
             'acc:val:hnsw:male',
             'ece:val:ensemble:male',
             'ece:val:knn:male',
             'ece:val:hnsw:male',
-            'loss:val:ensemble:female',
-            'loss:val:knn:female',
-            'loss:val:hnsw:female',
             'acc:val:ensemble:female',
             'acc:val:knn:female',
             'acc:val:hnsw:female',
@@ -388,6 +382,12 @@ def main():
             'loss:val',
             'acc:val',
             'ece:val',
+            'loss:val:female',
+            'acc:val:female',
+            'ece:val:female',
+            'loss:val:male',
+            'acc:val:male',
+            'ece:val:male',
         ] 
     args.metrics = {}
     args.metrics.update({key: Metric() for key in list_of_metrics})
