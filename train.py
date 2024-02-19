@@ -298,6 +298,7 @@ def main():
                         feat_dim, 
                         num_classes)
     elif args.train_method == 'nwhead':
+        print("WRONG!! WRONG!! init")
         print(len(train_dataset))
         print(len(genders), genders[0:20])
         network = NWNet(featurizer, 
@@ -333,6 +334,7 @@ def main():
         'acc:train',
     ]
     if args.train_method == 'nwhead':
+        print("WRONG!! WRONG!! metrics")
         list_of_val_metrics = [
             'loss:val:random',
             'loss:val:full',
@@ -404,6 +406,7 @@ def main():
     for epoch in range(start_epoch, args.num_epochs+1):
         print('Epoch:', epoch)
         if args.train_method == 'nwhead':
+            print("WRONG!! WRONG!! epoch")
             network.eval()
             network.precompute()
             print('Evaluating on random mode...')
@@ -467,6 +470,7 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
         if args.train_method == 'fchead':
             step_res = fc_step(batch, network, criterion, optimizer, args, is_train=True)
         else:
+            print("WRONG!! WRONG!!")
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=True)
         args.metrics['loss:train'].update_state(step_res['loss'], step_res['batch_size'])
         args.metrics['acc:train'].update_state(step_res['acc'], step_res['batch_size'])
@@ -496,6 +500,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
                 probs[gender_str].append(step_res['prob'][j].unsqueeze(0))
                 gts[gender_str].append(step_res['gt'][j].unsqueeze(0))
         else:
+            print("WRONG!! WRONG!! eval")
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=False, mode=mode)
             args.val_metrics[f'loss:val:{mode}'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics[f'acc:val:{mode}'].update_state(step_res['acc'], step_res['batch_size'])
@@ -529,6 +534,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'ece:val:female'].update_state(female_ece, 1)
         return args.val_metrics['acc:val'].result()
     else:
+        print("WRONG!! WRONG!!")
         args.val_metrics[f'acc:val:{mode}:male'].update_state(male_acc * 100, 1)
         args.val_metrics[f'ece:val:{mode}:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:{mode}:female'].update_state(female_acc * 100, 1)
@@ -558,6 +564,7 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             'gt': label}
 
 def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='random'):
+    print("WRONG!! WRONG!! nw step")
     '''Train/val for one step.'''
     img, label, gender = batch #gender never used
     img = img.float().to(args.device)
