@@ -127,7 +127,7 @@ class Parser(argparse.ArgumentParser):
                   default=1e-4, help='Weight decay')
         self.add_argument('--arch', type=str, default='resnet18')
         self.add_argument(
-          '--train_method', default='nwhead')
+          '--train_method', default='fchead')
         self.add_bool_arg('freeze_featurizer', False)
 
         # NW head parameters
@@ -382,10 +382,10 @@ def main():
             'loss:val',
             'acc:val',
             'ece:val',
-            'loss:val:female',
+            # 'loss:val:female',
             'acc:val:female',
             'ece:val:female',
-            'loss:val:male',
+            # 'loss:val:male',
             'acc:val:male',
             'ece:val:male',
         ] 
