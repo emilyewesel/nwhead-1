@@ -525,6 +525,8 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     female_probs = torch.cat(probs['female'], dim=0)
     female_gts = torch.cat(gts['female'], dim=0)
     female_acc = metric.acc(female_probs.argmax(-1), female_gts)
+    if mode == "random":
+        print("WOMEN!!")
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
     
     if args.train_method == 'fchead':
