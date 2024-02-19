@@ -99,7 +99,7 @@ class Parser(argparse.ArgumentParser):
                   type=str, help='directory where data lives')
         self.add_argument('--log_interval', type=int,
                   default=25, help='Frequency of logs')
-        self.add_argument('--workers', type=int, default=0,
+        self.add_argument('--workers', type=int, default=3,
                   help='Num workers')
         self.add_argument('--gpu_id', type=int, default=0,
                   help='gpu id to train on')
