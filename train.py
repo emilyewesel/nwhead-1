@@ -110,7 +110,7 @@ class Parser(argparse.ArgumentParser):
         self.add_argument('--lr', type=float, default=1e-2,
                   help='Learning rate')
         self.add_argument('--batch_size', type=int,
-                  default=32, help='Batch size')
+                  default=64, help='Batch size')
         self.add_argument('--num_steps_per_epoch', type=int,
                   default=1000, help='Num steps per epoch')
         self.add_argument('--num_val_steps_per_epoch', type=int,
@@ -575,7 +575,7 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
     optimizer.zero_grad()
     with torch.set_grad_enabled(is_train):
         if is_train:
-            output = network(img, gender)
+            output = network(img, gender) #changed this from label
             # print(img)
         else:
             output = network.predict(img, mode)

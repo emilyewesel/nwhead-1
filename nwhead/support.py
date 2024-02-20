@@ -74,6 +74,7 @@ class SupportSetTrain(SupportSet):
     def get_support(self, y):
         '''Samples a support for training.'''
         if self.train_type == 'irm':
+            print("irm confirmed")
             train_iter = np.random.choice(self.train_iter)
             sx, sy, sm = train_iter.next()
         else:
