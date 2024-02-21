@@ -19,7 +19,7 @@ class NWNet(nn.Module):
                  feat_dim=None,
                  proj_dim=0, 
                  kernel_type='euclidean', 
-                 train_type='irm' #changed from random, 
+                 train_type='irm', #changed from random, 
                  n_way=None,
                  n_shot=1, 
                  n_shot_random=1, 
