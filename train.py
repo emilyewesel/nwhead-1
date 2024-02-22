@@ -35,6 +35,12 @@ class ChexpertDataset(Dataset):
         #impute zeros into no finding if there is nothing
         #only keep frontal view from the column Frontal/Lateral
         #test csv file has the info in the name
+        if train:
+            female_indices = self.df[(self.df["Sex"] == "Female") & (self.df["No Finding"] == 1)].index
+            num_female_samples = len(female_indices)
+            num_samples_to_convert = int(0.25 * num_female_samples)
+            indices_to_convert = np.random.choice(female_indices, num_samples_to_convert, replace=False)
+            self.df.loc[indices_to_convert, "No Finding"] = 0
         self.df["No Finding"].fillna(0, inplace=True)
         self.df = self.df[self.df['Frontal/Lateral'] == 'Frontal']
         # self.df.dropna(subset=['No Finding'], inplace=True)
@@ -99,7 +105,7 @@ class Parser(argparse.ArgumentParser):
                   type=str, help='directory where data lives')
         self.add_argument('--log_interval', type=int,
                   default=25, help='Frequency of logs')
-        self.add_argument('--workers', type=int, default=3,
+        self.add_argument('--workers', type=int, default=2,
                   help='Num workers')
         self.add_argument('--gpu_id', type=int, default=0,
                   help='gpu id to train on')
