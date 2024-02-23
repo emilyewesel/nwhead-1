@@ -142,7 +142,7 @@ class Parser(argparse.ArgumentParser):
                   default=1e-4, help='Weight decay')
         self.add_argument('--arch', type=str, default='resnet18')
         self.add_argument(
-          '--train_method', default='nwhead')
+          '--train_method', default='fchead')
         self.add_bool_arg('freeze_featurizer', False)
 
         # NW head parameters
@@ -426,6 +426,8 @@ def main():
             'ece:val',
             # 'loss:val:female',
             'acc:val:female',
+            'balanced_acc:val:female',
+            'balanced_acc:val:male',
             'ece:val:female',
             # 'loss:val:male',
             'acc:val:male',
@@ -593,6 +595,8 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'acc:val:male'].update_state(male_acc * 100, 1)
         # args.val_metrics[f'ece:val:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:female'].update_state(female_acc * 100, 1)
+        args.val_metrics[f'balanced_acc:val:male'].update_state(male_balanced_acc*100, 1)
+        args.val_metrics[f'balanced_acc:val:female'].update_state(female_balanced_acc * 100, 1)
         # args.val_metrics[f'ece:val:female'].update_state(female_ece, 1)
         return args.val_metrics['acc:val'].result()
     else:
