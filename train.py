@@ -348,7 +348,6 @@ def main():
         'acc:train',
     ]
     if args.train_method == 'nwhead':
-    if args.train_method == 'nwhead':
     list_of_val_metrics = [
         'loss:val:random',
         'loss:val:full',
