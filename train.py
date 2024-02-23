@@ -347,8 +347,8 @@ def main():
     # Tracking metrics
     list_of_metrics = [
         'loss:train',
-        'balanced_acc:train'
-        'macro_acc:train'
+        'balanced_acc:train',
+        'macro_acc:train',
         'acc:train',
     ]
     if args.train_method == 'nwhead':
