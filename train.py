@@ -199,19 +199,6 @@ class Parser(argparse.ArgumentParser):
 
     
 def main():
-    def balanced_acc_fcn(preds, gts, class_labels):
-        balanced_acc_per_class = []
-        for label in class_labels:
-            class_indices = (gts == label).nonzero()
-            class_preds = preds[class_indices]
-            class_gts = gts[class_indices]
-            class_acc = metric.acc(class_preds, class_gts)
-            balanced_acc_per_class.append(class_acc)
-        balanced_acc = torch.tensor(balanced_acc_per_class).mean()
-        return balanced_acc.item()
-
-    def macro_acc_fcn(preds, gts, class_labels):
-        return balanced_acc_fcn(preds, gts, class_labels) * 100
     
     # Parse arguments
     args = Parser().parse()
@@ -507,6 +494,19 @@ def main():
             metric.reset_state()
         for _, metric in args.val_metrics.items():
             metric.reset_state()
+def balanced_acc_fcn(preds, gts, class_labels):
+    balanced_acc_per_class = []
+    for label in class_labels:
+        class_indices = (gts == label).nonzero()
+        class_preds = preds[class_indices]
+        class_gts = gts[class_indices]
+        class_acc = metric.acc(class_preds, class_gts)
+        balanced_acc_per_class.append(class_acc)
+    balanced_acc = torch.tensor(balanced_acc_per_class).mean()
+    return balanced_acc.item()
+
+def macro_acc_fcn(preds, gts, class_labels):
+    return balanced_acc_fcn(preds, gts, class_labels) * 100
 
 def train_epoch(train_loader, network, criterion, optimizer, args):
     """Train for one epoch."""
