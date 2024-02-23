@@ -347,8 +347,8 @@ def main():
     # Tracking metrics
     list_of_metrics = [
         'loss:train',
-        'balanced_acc:train',
-        'macro_acc:train',
+        # 'balanced_acc:train',
+        # 'macro_acc:train',
         'acc:train',
     ]
     if args.train_method == 'nwhead':
@@ -527,8 +527,8 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=True)
         args.metrics['loss:train'].update_state(step_res['loss'], step_res['batch_size'])
         args.metrics['acc:train'].update_state(step_res['acc'], step_res['batch_size'])
-        args.metrics['balanced_acc:train'].update_state(step_res['balanced_acc'], step_res['batch_size'])
-        args.metrics['macro_acc:train'].update_state(step_res['macro_acc'], step_res['batch_size'])
+        # args.metrics['balanced_acc:train'].update_state(step_res['balanced_acc'], step_res['batch_size'])
+        # args.metrics['macro_acc:train'].update_state(step_res['macro_acc'], step_res['batch_size'])
         if i == args.num_steps_per_epoch:
             break
 
