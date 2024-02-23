@@ -348,65 +348,65 @@ def main():
         'acc:train',
     ]
     if args.train_method == 'nwhead':
-    list_of_val_metrics = [
-        'loss:val:random',
-        'loss:val:full',
-        'loss:val:cluster',
-        'acc:val:random',
-        'acc:val:full',
-        'acc:val:cluster',
-        'balanced_acc:val:random',   # New metric for balanced accuracy
-        'balanced_acc:val:full',     # New metric for balanced accuracy
-        'balanced_acc:val:cluster',  # New metric for balanced accuracy
-        'macro_acc:val:random',      # New metric for macro accuracy
-        'macro_acc:val:full',        # New metric for macro accuracy
-        'macro_acc:val:cluster',     # New metric for macro accuracy
-        'ece:val:random',
-        'ece:val:full',
-        'ece:val:cluster',
-        'loss:val:ensemble',
-        'loss:val:knn',
-        'loss:val:hnsw',
-        'acc:val:ensemble',
-        'acc:val:knn',
-        'acc:val:hnsw',
-        'balanced_acc:val:random:male',
-        'balanced_acc:val:full:male',
-        'balanced_acc:val:cluster:male',
-        'macro_acc:val:random:male',   # New metric for male macro accuracy
-        'macro_acc:val:full:male',     # New metric for male macro accuracy
-        'macro_acc:val:cluster:male',  # New metric for male macro accuracy
-        'ece:val:random:male',
-        'ece:val:full:male',
-        'ece:val:cluster:male',
-        'balanced_acc:val:random:female',
-        'balanced_acc:val:full:female',
-        'balanced_acc:val:cluster:female',
-        'macro_acc:val:random:female',   # New metric for female macro accuracy
-        'macro_acc:val:full:female',     # New metric for female macro accuracy
-        'macro_acc:val:cluster:female',  # New metric for female macro accuracy
-        'ece:val:random:female',
-        'ece:val:full:female',
-        'ece:val:cluster:female',
-        'acc:val:ensemble:male',
-        'acc:val:knn:male',
-        'acc:val:hnsw:male',
-        'balanced_acc:val:ensemble:male',
-        'balanced_acc:val:knn:male',
-        'balanced_acc:val:hnsw:male',
-        'macro_acc:val:ensemble:male',
-        'macro_acc:val:knn:male',
-        'macro_acc:val:hnsw:male',
-        'acc:val:ensemble:female',
-        'acc:val:knn:female',
-        'acc:val:hnsw:female',
-        'balanced_acc:val:ensemble:female',
-        'balanced_acc:val:knn:female',
-        'balanced_acc:val:hnsw:female',
-        'macro_acc:val:ensemble:female',
-        'macro_acc:val:knn:female',
-        'macro_acc:val:hnsw:female',
-    ]
+        list_of_val_metrics = [
+            'loss:val:random',
+            'loss:val:full',
+            'loss:val:cluster',
+            'acc:val:random',
+            'acc:val:full',
+            'acc:val:cluster',
+            'balanced_acc:val:random',   # New metric for balanced accuracy
+            'balanced_acc:val:full',     # New metric for balanced accuracy
+            'balanced_acc:val:cluster',  # New metric for balanced accuracy
+            'macro_acc:val:random',      # New metric for macro accuracy
+            'macro_acc:val:full',        # New metric for macro accuracy
+            'macro_acc:val:cluster',     # New metric for macro accuracy
+            'ece:val:random',
+            'ece:val:full',
+            'ece:val:cluster',
+            'loss:val:ensemble',
+            'loss:val:knn',
+            'loss:val:hnsw',
+            'acc:val:ensemble',
+            'acc:val:knn',
+            'acc:val:hnsw',
+            'balanced_acc:val:random:male',
+            'balanced_acc:val:full:male',
+            'balanced_acc:val:cluster:male',
+            'macro_acc:val:random:male',   # New metric for male macro accuracy
+            'macro_acc:val:full:male',     # New metric for male macro accuracy
+            'macro_acc:val:cluster:male',  # New metric for male macro accuracy
+            'ece:val:random:male',
+            'ece:val:full:male',
+            'ece:val:cluster:male',
+            'balanced_acc:val:random:female',
+            'balanced_acc:val:full:female',
+            'balanced_acc:val:cluster:female',
+            'macro_acc:val:random:female',   # New metric for female macro accuracy
+            'macro_acc:val:full:female',     # New metric for female macro accuracy
+            'macro_acc:val:cluster:female',  # New metric for female macro accuracy
+            'ece:val:random:female',
+            'ece:val:full:female',
+            'ece:val:cluster:female',
+            'acc:val:ensemble:male',
+            'acc:val:knn:male',
+            'acc:val:hnsw:male',
+            'balanced_acc:val:ensemble:male',
+            'balanced_acc:val:knn:male',
+            'balanced_acc:val:hnsw:male',
+            'macro_acc:val:ensemble:male',
+            'macro_acc:val:knn:male',
+            'macro_acc:val:hnsw:male',
+            'acc:val:ensemble:female',
+            'acc:val:knn:female',
+            'acc:val:hnsw:female',
+            'balanced_acc:val:ensemble:female',
+            'balanced_acc:val:knn:female',
+            'balanced_acc:val:hnsw:female',
+            'macro_acc:val:ensemble:female',
+            'macro_acc:val:knn:female',
+            'macro_acc:val:hnsw:female',
+        ]
 
 
     else:
