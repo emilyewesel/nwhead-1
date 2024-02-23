@@ -200,15 +200,15 @@ class Parser(argparse.ArgumentParser):
     
 def main():
     def balanced_acc_fcn(preds, gts, class_labels):
-    balanced_acc_per_class = []
-    for label in class_labels:
-        class_indices = (gts == label).nonzero()
-        class_preds = preds[class_indices]
-        class_gts = gts[class_indices]
-        class_acc = metric.acc(class_preds, class_gts)
-        balanced_acc_per_class.append(class_acc)
-    balanced_acc = torch.tensor(balanced_acc_per_class).mean()
-    return balanced_acc.item()
+        balanced_acc_per_class = []
+        for label in class_labels:
+            class_indices = (gts == label).nonzero()
+            class_preds = preds[class_indices]
+            class_gts = gts[class_indices]
+            class_acc = metric.acc(class_preds, class_gts)
+            balanced_acc_per_class.append(class_acc)
+        balanced_acc = torch.tensor(balanced_acc_per_class).mean()
+        return balanced_acc.item()
 
     def macro_acc_fcn(preds, gts, class_labels):
         return balanced_acc_fcn(preds, gts, class_labels) * 100
