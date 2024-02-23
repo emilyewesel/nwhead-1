@@ -343,54 +343,73 @@ def main():
     # Tracking metrics
     list_of_metrics = [
         'loss:train',
+        'balanced_acc:train'
+        'macro_acc:train'
         'acc:train',
     ]
     if args.train_method == 'nwhead':
-        # print("WRONG!! WRONG!! metrics")
-        list_of_val_metrics = [
-            'loss:val:random',
-            'loss:val:full',
-            'loss:val:cluster',
-            'acc:val:random',
-            'acc:val:full',
-            'acc:val:cluster',
-            'ece:val:random',
-            'ece:val:full',
-            'ece:val:cluster',
-            'loss:val:ensemble',
-            'loss:val:knn',
-            'loss:val:hnsw',
-            'acc:val:ensemble',
-            'acc:val:knn',
-            'acc:val:hnsw',
-            'ece:val:ensemble',
-            'ece:val:knn',
-            'ece:val:hnsw',
-            'acc:val:random:male',  # New metric for male accuracy
-            'acc:val:full:male',    # New metric for male accuracy
-            'acc:val:cluster:male', # New metric for male accuracy
-            'ece:val:random:male',  # New metric for male ECE
-            'ece:val:full:male',    # New metric for male ECE
-            'ece:val:cluster:male', # New metric for male ECE
-            'acc:val:random:female',  # New metric for female accuracy
-            'acc:val:full:female',    # New metric for female accuracy
-            'acc:val:cluster:female', # New metric for female accuracy
-            'ece:val:random:female',  # New metric for female ECE
-            'ece:val:full:female',    # New metric for female ECE
-            'ece:val:cluster:female', # New metric for female ECE
-            'acc:val:ensemble:male',
-            'acc:val:knn:male',
-            'acc:val:hnsw:male',
-            'ece:val:ensemble:male',
-            'ece:val:knn:male',
-            'ece:val:hnsw:male',
-            'acc:val:ensemble:female',
-            'acc:val:knn:female',
-            'acc:val:hnsw:female',
-            'ece:val:ensemble:female',
-            'ece:val:knn:female',
-            'ece:val:hnsw:female',
-        ] 
+    if args.train_method == 'nwhead':
+    list_of_val_metrics = [
+        'loss:val:random',
+        'loss:val:full',
+        'loss:val:cluster',
+        'acc:val:random',
+        'acc:val:full',
+        'acc:val:cluster',
+        'balanced_acc:val:random',   # New metric for balanced accuracy
+        'balanced_acc:val:full',     # New metric for balanced accuracy
+        'balanced_acc:val:cluster',  # New metric for balanced accuracy
+        'macro_acc:val:random',      # New metric for macro accuracy
+        'macro_acc:val:full',        # New metric for macro accuracy
+        'macro_acc:val:cluster',     # New metric for macro accuracy
+        'ece:val:random',
+        'ece:val:full',
+        'ece:val:cluster',
+        'loss:val:ensemble',
+        'loss:val:knn',
+        'loss:val:hnsw',
+        'acc:val:ensemble',
+        'acc:val:knn',
+        'acc:val:hnsw',
+        'balanced_acc:val:random:male',
+        'balanced_acc:val:full:male',
+        'balanced_acc:val:cluster:male',
+        'macro_acc:val:random:male',   # New metric for male macro accuracy
+        'macro_acc:val:full:male',     # New metric for male macro accuracy
+        'macro_acc:val:cluster:male',  # New metric for male macro accuracy
+        'ece:val:random:male',
+        'ece:val:full:male',
+        'ece:val:cluster:male',
+        'balanced_acc:val:random:female',
+        'balanced_acc:val:full:female',
+        'balanced_acc:val:cluster:female',
+        'macro_acc:val:random:female',   # New metric for female macro accuracy
+        'macro_acc:val:full:female',     # New metric for female macro accuracy
+        'macro_acc:val:cluster:female',  # New metric for female macro accuracy
+        'ece:val:random:female',
+        'ece:val:full:female',
+        'ece:val:cluster:female',
+        'acc:val:ensemble:male',
+        'acc:val:knn:male',
+        'acc:val:hnsw:male',
+        'balanced_acc:val:ensemble:male',
+        'balanced_acc:val:knn:male',
+        'balanced_acc:val:hnsw:male',
+        'macro_acc:val:ensemble:male',
+        'macro_acc:val:knn:male',
+        'macro_acc:val:hnsw:male',
+        'acc:val:ensemble:female',
+        'acc:val:knn:female',
+        'acc:val:hnsw:female',
+        'balanced_acc:val:ensemble:female',
+        'balanced_acc:val:knn:female',
+        'balanced_acc:val:hnsw:female',
+        'macro_acc:val:ensemble:female',
+        'macro_acc:val:knn:female',
+        'macro_acc:val:hnsw:female',
+    ]
+
+
     else:
         list_of_val_metrics = [
             'loss:val',
@@ -486,6 +505,8 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=True)
         args.metrics['loss:train'].update_state(step_res['loss'], step_res['batch_size'])
         args.metrics['acc:train'].update_state(step_res['acc'], step_res['batch_size'])
+        args.metrics['balanced_acc:train'].update_state(step_res['balanced_acc'], step_res['batch_size'])
+        args.metrics['macro_acc:train'].update_state(step_res['macro_acc'], step_res['batch_size'])
         if i == args.num_steps_per_epoch:
             break
 
@@ -537,6 +558,11 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     female_probs = torch.cat(probs['female'], dim=0)
     female_gts = torch.cat(gts['female'], dim=0)
     female_acc = metric.acc(female_probs.argmax(-1), female_gts)
+
+    male_balanced_acc = metric.balanced_acc(male_probs.argmax(-1), male_gts)
+    female_balanced_acc = metric.balanced_acc(female_probs.argmax(-1), female_gts)
+    male_macro_acc = metric.macro_acc(male_probs.argmax(-1), male_gts)
+    female_macro_acc = metric.macro_acc(female_probs.argmax(-1), female_gts)
     if mode == "random":
         print("WOMEN!!")
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
@@ -553,53 +579,62 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'ece:val:{mode}:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:{mode}:female'].update_state(female_acc * 100, 1)
         args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
+        args.val_metrics[f'balanced_acc:val:{mode}:male'].update_state(male_balanced_acc, 1)
+        args.val_metrics[f'balanced_acc:val:{mode}:female'].update_state(female_balanced_acc * 100, 1)
+        args.val_metrics[f'macro_acc:val:{mode}:male'].update_state(male_macro_acc, 1)
+        args.val_metrics[f'macro_acc:val:{mode}:female'].update_state(female_macro_acc * 100, 1)
 
         return args.val_metrics[f'acc:val:{mode}'].result()
 
 def fc_step(batch, network, criterion, optimizer, args, is_train=True):
     '''Train/val for one step.'''
-    img, label, gender = batch #gender never used 
+    img, label, gender = batch
     img = img.float().to(args.device)
     label = label.to(args.device)
     optimizer.zero_grad()
     with torch.set_grad_enabled(is_train):
         output = network(img)
-        # print("computing loss with ", output, label)
         loss = criterion(output, label)
         if is_train:
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
+        balanced_acc = metric.balanced_acc(output.argmax(-1), label, args.num_classes)
+        macro_acc = metric.macro_acc(output.argmax(-1), label, args.num_classes)
 
     return {'loss': loss.cpu().detach().numpy(), \
-            'acc': acc*100, \
+            'acc': acc * 100, \
+            'balanced_acc': balanced_acc * 100, \
+            'macro_acc': macro_acc * 100, \
             'batch_size': len(img), \
             'prob': output.exp(), \
             'gt': label}
 
+
 def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='random'):
-    # print("WRONG!! WRONG!! nw step")
     '''Train/val for one step.'''
-    img, label, gender = batch #gender never used
+    img, label, gender = batch
     img = img.float().to(args.device)
     label = label.to(args.device)
     gender = gender.to(args.device)
     optimizer.zero_grad()
     with torch.set_grad_enabled(is_train):
         if is_train:
-            output = network(img, gender) #changed this from label
-            # print(img)
+            output = network(img, gender)
         else:
             output = network.predict(img, mode)
-        # print("we are computing loss", output, label) # always gives the vector tensor([[-27.6310,   0.0000]]
         loss = criterion(output, label)
         if is_train:
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
+        balanced_acc = metric.balanced_acc(output.argmax(-1), label, args.num_classes)
+        macro_acc = metric.macro_acc(output.argmax(-1), label, args.num_classes)
 
     return {'loss': loss.cpu().detach().numpy(), \
-            'acc': acc*100, \
+            'acc': acc * 100, \
+            'balanced_acc': balanced_acc * 100, \
+            'macro_acc': macro_acc * 100, \
             'batch_size': len(img), \
             'prob': output.exp(), \
             'gt': label}
