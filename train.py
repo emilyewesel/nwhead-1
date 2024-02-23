@@ -45,15 +45,15 @@ class ChexpertDataset(Dataset):
         self.df.dropna(subset=["Sex"], inplace=True)
         self.df = self.df[self.df.iloc[:, 1].isin(["Female", "Male"])]
         print("are we training", train)
-        if train:
-            print("before", len(self.df[(self.df["Sex"] == "Female") & (self.df["No Finding"] == 1)]))
-        if train:
-            female_indices = self.df[(self.df["Sex"] == "Female") & (self.df["No Finding"] == 1)].index
-            num_female_samples = len(female_indices)
-            num_samples_to_convert = int(0.25 * num_female_samples)
-            indices_to_convert = np.random.choice(female_indices, num_samples_to_convert, replace=False)
-            self.df.loc[indices_to_convert, "No Finding"] = 0
-            print("we converted", indices_to_convert)
+        # if train:
+        #     print("before", len(self.df[(self.df["Sex"] == "Female") & (self.df["No Finding"] == 1)]))
+        # if train:
+        #     female_indices = self.df[(self.df["Sex"] == "Female") & (self.df["No Finding"] == 1)].index
+        #     num_female_samples = len(female_indices)
+        #     num_samples_to_convert = int(0.25 * num_female_samples)
+        #     indices_to_convert = np.random.choice(female_indices, num_samples_to_convert, replace=False)
+        #     self.df.loc[indices_to_convert, "No Finding"] = 0
+        #     print("we converted", indices_to_convert)
         print(self.df.iloc[:10, 1])
         # self.df.dropna(subset=['Sex'], inplace=True)
         self.base_path = train_base_path if train else test_base_path
@@ -142,7 +142,7 @@ class Parser(argparse.ArgumentParser):
                   default=1e-4, help='Weight decay')
         self.add_argument('--arch', type=str, default='resnet18')
         self.add_argument(
-          '--train_method', default='fchead')
+          '--train_method', default='nwhead')
         self.add_bool_arg('freeze_featurizer', False)
 
         # NW head parameters
