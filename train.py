@@ -27,6 +27,21 @@ from torch.utils.data import DataLoader
 from PIL import Image
 import torch.nn.functional as F
 
+def balanced_acc(preds, gts, class_labels):
+        balanced_acc_per_class = []
+        for label in class_labels:
+            class_indices = (gts == label).nonzero()
+            class_preds = preds[class_indices]
+            class_gts = gts[class_indices]
+            class_acc = metric.acc(class_preds, class_gts)
+            balanced_acc_per_class.append(class_acc)
+        balanced_acc = torch.tensor(balanced_acc_per_class).mean()
+        return balanced_acc.item()
+
+    def macro_acc(preds, gts, class_labels):
+        return balanced_acc(preds, gts, class_labels) * 100
+
+
 
 class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True):
@@ -194,21 +209,7 @@ class Parser(argparse.ArgumentParser):
             json.dump(vars(args), args_file, indent=4)
         return args
 
-class emily_metric:
-    def balanced_acc(preds, gts, class_labels):
-        balanced_acc_per_class = []
-        for label in class_labels:
-            class_indices = (gts == label).nonzero()
-            class_preds = preds[class_indices]
-            class_gts = gts[class_indices]
-            class_acc = metric.acc(class_preds, class_gts)
-            balanced_acc_per_class.append(class_acc)
-        balanced_acc = torch.tensor(balanced_acc_per_class).mean()
-        return balanced_acc.item()
-
-    def macro_acc(preds, gts, class_labels):
-        return balanced_acc(preds, gts, class_labels) * 100
-
+    
 def main():
     # Parse arguments
     args = Parser().parse()
