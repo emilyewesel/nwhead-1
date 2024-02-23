@@ -612,8 +612,8 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = emily_metric.balanced_acc(output.argmax(-1), label, args.num_classes)
-        macro_acc = emily_metric.macro_acc(output.argmax(-1), label, args.num_classes)
+        balanced_acc = emily_metric.balanced_acc(output.argmax(-1), label, 2)
+        macro_acc = emily_metric.macro_acc(output.argmax(-1), label, 2)
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
@@ -641,8 +641,8 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = emily_metric.balanced_acc(output.argmax(-1), label, args.num_classes)
-        macro_acc = emily_metric.macro_acc(output.argmax(-1), label, args.num_classes)
+        balanced_acc = emily_metric.balanced_acc(output.argmax(-1), label, 2)
+        macro_acc = emily_metric.macro_acc(output.argmax(-1), label, 2)
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
