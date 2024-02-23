@@ -194,6 +194,20 @@ class Parser(argparse.ArgumentParser):
             json.dump(vars(args), args_file, indent=4)
         return args
 
+class emily_metric:
+    def balanced_acc(self, preds, gts, class_labels):
+        balanced_acc_per_class = []
+        for label in class_labels:
+            class_indices = (gts == label).nonzero()
+            class_preds = preds[class_indices]
+            class_gts = gts[class_indices]
+            class_acc = self.acc(class_preds, class_gts)
+            balanced_acc_per_class.append(class_acc)
+        balanced_acc = torch.tensor(balanced_acc_per_class).mean()
+        return balanced_acc.item()
+
+    def macro_acc(self, preds, gts, class_labels):
+        return self.balanced_acc(preds, gts, class_labels) * 100
 
 def main():
     # Parse arguments
@@ -558,10 +572,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     female_gts = torch.cat(gts['female'], dim=0)
     female_acc = metric.acc(female_probs.argmax(-1), female_gts)
 
-    male_balanced_acc = metric.balanced_acc(male_probs.argmax(-1), male_gts)
-    female_balanced_acc = metric.balanced_acc(female_probs.argmax(-1), female_gts)
-    male_macro_acc = metric.macro_acc(male_probs.argmax(-1), male_gts)
-    female_macro_acc = metric.macro_acc(female_probs.argmax(-1), female_gts)
+    male_balanced_acc = emily_metric.balanced_acc(male_probs.argmax(-1), male_gts)
+    female_balanced_acc = emily_metric.balanced_acc(female_probs.argmax(-1), female_gts)
+    male_macro_acc = emily_metric.macro_acc(male_probs.argmax(-1), male_gts)
+    female_macro_acc = emily_metric.macro_acc(female_probs.argmax(-1), female_gts)
     if mode == "random":
         print("WOMEN!!")
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
@@ -598,8 +612,8 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = metric.balanced_acc(output.argmax(-1), label, args.num_classes)
-        macro_acc = metric.macro_acc(output.argmax(-1), label, args.num_classes)
+        balanced_acc = emily_metric.balanced_acc(output.argmax(-1), label, args.num_classes)
+        macro_acc = emily_metric.macro_acc(output.argmax(-1), label, args.num_classes)
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
@@ -627,8 +641,8 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = metric.balanced_acc(output.argmax(-1), label, args.num_classes)
-        macro_acc = metric.macro_acc(output.argmax(-1), label, args.num_classes)
+        balanced_acc = emily_metric.balanced_acc(output.argmax(-1), label, args.num_classes)
+        macro_acc = emily_metric.macro_acc(output.argmax(-1), label, args.num_classes)
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
