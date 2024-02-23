@@ -601,9 +601,9 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         # args.val_metrics[f'ece:val:{mode}:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:{mode}:female'].update_state(female_acc * 100, 1)
         # args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
-        args.val_metrics[f'balanced_acc:val:{mode}:male'].update_state(male_balanced_acc, 1)
+        args.val_metrics[f'balanced_acc:val:{mode}:male'].update_state(male_balanced_acc*100, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:female'].update_state(female_balanced_acc * 100, 1)
-        args.val_metrics[f'macro_acc:val:{mode}:male'].update_state(male_macro_acc, 1)
+        args.val_metrics[f'macro_acc:val:{mode}:male'].update_state(male_macro_acc*100, 1)
         args.val_metrics[f'macro_acc:val:{mode}:female'].update_state(female_macro_acc * 100, 1)
 
         return args.val_metrics[f'acc:val:{mode}'].result()
