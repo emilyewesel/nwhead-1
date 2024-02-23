@@ -359,6 +359,12 @@ def main():
             'acc:val:random',
             'acc:val:full',
             'acc:val:cluster',
+            'acc:val:random:male',
+            'acc:val:full:male',
+            'acc:val:cluster:male',
+            'acc:val:random:female',
+            'acc:val:full:female',
+            'acc:val:cluster:female',
             'balanced_acc:val:random',   # New metric for balanced accuracy
             'balanced_acc:val:full',     # New metric for balanced accuracy
             'balanced_acc:val:cluster',  # New metric for balanced accuracy
