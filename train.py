@@ -575,7 +575,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     male_balanced_acc = emily_metric.balanced_acc(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
     female_balanced_acc = emily_metric.balanced_acc(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
     male_macro_acc = emily_metric.macro_acc(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
-    female_macro_acc = emily_metric.macro_acc(female_probs.argmax(-1), female_gts), class_labels=[0, 1]
+    female_macro_acc = emily_metric.macro_acc(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
     if mode == "random":
         print("WOMEN!!")
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
