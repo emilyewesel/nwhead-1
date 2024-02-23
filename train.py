@@ -27,7 +27,7 @@ from torch.utils.data import DataLoader
 from PIL import Image
 import torch.nn.functional as F
 
-def balanced_acc(preds, gts, class_labels):
+def balanced_acc_fcn(preds, gts, class_labels):
     balanced_acc_per_class = []
     for label in class_labels:
         class_indices = (gts == label).nonzero()
@@ -38,8 +38,8 @@ def balanced_acc(preds, gts, class_labels):
     balanced_acc = torch.tensor(balanced_acc_per_class).mean()
     return balanced_acc.item()
 
-    def macro_acc(preds, gts, class_labels):
-        return balanced_acc(preds, gts, class_labels) * 100
+    def macro_acc_fcn(preds, gts, class_labels):
+        return balanced_acc_fcn(preds, gts, class_labels) * 100
 
 
 
@@ -573,10 +573,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     female_gts = torch.cat(gts['female'], dim=0)
     female_acc = metric.acc(female_probs.argmax(-1), female_gts)
 
-    male_balanced_acc = balanced_acc(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
-    female_balanced_acc = balanced_acc(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
-    male_macro_acc = macro_acc(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
-    female_macro_acc = macro_acc(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
+    male_balanced_acc = balanced_acc_fcn(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
+    female_balanced_acc = balanced_acc_fcn(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
+    male_macro_acc = macro_acc_fcn(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
+    female_macro_acc = macro_acc_fcn(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
     if mode == "random":
         print("WOMEN!!")
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
@@ -613,8 +613,8 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = balanced_acc(output.argmax(-1), label, class_labels=[0, 1])
-        macro_acc = macro_acc(output.argmax(-1), label, class_labels=[0, 1])
+        balanced_acc = balanced_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
+        macro_acc = macro_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
@@ -642,8 +642,8 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = balanced_acc(output.argmax(-1), label, class_labels=[0, 1])
-        macro_acc = macro_acc(output.argmax(-1), label, class_labels=[0, 1])
+        balanced_acc = balanced_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
+        macro_acc = macro_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
