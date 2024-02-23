@@ -195,7 +195,7 @@ class Parser(argparse.ArgumentParser):
         return args
 
 class emily_metric:
-    def balanced_acc(self, preds, gts, class_labels):
+    def balanced_acc(preds, gts, class_labels):
         balanced_acc_per_class = []
         for label in class_labels:
             class_indices = (gts == label).nonzero()
@@ -206,7 +206,7 @@ class emily_metric:
         balanced_acc = torch.tensor(balanced_acc_per_class).mean()
         return balanced_acc.item()
 
-    def macro_acc(self, preds, gts, class_labels):
+    def macro_acc(preds, gts, class_labels):
         return self.balanced_acc(preds, gts, class_labels) * 100
 
 def main():
