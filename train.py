@@ -573,10 +573,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     female_gts = torch.cat(gts['female'], dim=0)
     female_acc = metric.acc(female_probs.argmax(-1), female_gts)
 
-    male_balanced_acc = emily_metric.balanced_acc(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
-    female_balanced_acc = emily_metric.balanced_acc(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
-    male_macro_acc = emily_metric.macro_acc(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
-    female_macro_acc = emily_metric.macro_acc(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
+    male_balanced_acc = balanced_acc(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
+    female_balanced_acc = balanced_acc(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
+    male_macro_acc = macro_acc(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
+    female_macro_acc = macro_acc(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
     if mode == "random":
         print("WOMEN!!")
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
@@ -613,8 +613,8 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = emily_metric.balanced_acc(output.argmax(-1), label, class_labels=[0, 1])
-        macro_acc = emily_metric.macro_acc(output.argmax(-1), label, class_labels=[0, 1])
+        balanced_acc = balanced_acc(output.argmax(-1), label, class_labels=[0, 1])
+        macro_acc = macro_acc(output.argmax(-1), label, class_labels=[0, 1])
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
@@ -642,8 +642,8 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = emily_metric.balanced_acc(output.argmax(-1), label, class_labels=[0, 1])
-        macro_acc = emily_metric.macro_acc(output.argmax(-1), label, class_labels=[0, 1])
+        balanced_acc = balanced_acc(output.argmax(-1), label, class_labels=[0, 1])
+        macro_acc = macro_acc(output.argmax(-1), label, class_labels=[0, 1])
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
