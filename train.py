@@ -644,13 +644,13 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = balanced_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
-        macro_acc = macro_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
+        # balanced_acc = balanced_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
+        # macro_acc = macro_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
-            'balanced_acc': balanced_acc * 100, \
-            'macro_acc': macro_acc * 100, \
+            # 'balanced_acc': balanced_acc * 100, \
+            # 'macro_acc': macro_acc * 100, \
             'batch_size': len(img), \
             'prob': output.exp(), \
             'gt': label}
