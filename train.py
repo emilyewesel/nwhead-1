@@ -591,16 +591,16 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     
     if args.train_method == 'fchead':
         args.val_metrics[f'acc:val:male'].update_state(male_acc * 100, 1)
-        args.val_metrics[f'ece:val:male'].update_state(male_ece, 1)
+        # args.val_metrics[f'ece:val:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:female'].update_state(female_acc * 100, 1)
-        args.val_metrics[f'ece:val:female'].update_state(female_ece, 1)
+        # args.val_metrics[f'ece:val:female'].update_state(female_ece, 1)
         return args.val_metrics['acc:val'].result()
     else:
         # print("WRONG!! WRONG!!")
         args.val_metrics[f'acc:val:{mode}:male'].update_state(male_acc * 100, 1)
-        args.val_metrics[f'ece:val:{mode}:male'].update_state(male_ece, 1)
+        # args.val_metrics[f'ece:val:{mode}:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:{mode}:female'].update_state(female_acc * 100, 1)
-        args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
+        # args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:male'].update_state(male_balanced_acc, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:female'].update_state(female_balanced_acc * 100, 1)
         args.val_metrics[f'macro_acc:val:{mode}:male'].update_state(male_macro_acc, 1)
