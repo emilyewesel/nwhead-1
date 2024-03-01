@@ -643,12 +643,12 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'balanced_acc:val:male'].update_state(male_balanced_acc*100, 1)
         args.val_metrics[f'balanced_acc:val:female'].update_state(female_balanced_acc * 100, 1)
         # args.val_metrics[f'ece:val:female'].update_state(female_ece, 1)
-        args.val_metrics[f'f1:val:male'].update_state(f1_score(male_gts_np, male_probs_np, average='weighted'), step_res['batch_size'])
-        args.val_metrics[f'tpr:val:male'].update_state(tpr_score(male_gts_np, male_probs_np), step_res['batch_size'])
-        args.val_metrics[f'auc:val:male'].update_state(auc_score(male_gts_np, male_probs_np), step_res['batch_size'])
-        args.val_metrics[f'f1:val:female'].update_state(f1_score(female_gts_np, female_probs_np, average='weighted'), step_res['batch_size'])
-        args.val_metrics[f'tpr:val:female'].update_state(tpr_score(female_gts_np, female_probs_np), step_res['batch_size'])
-        args.val_metrics[f'auc:val:female'].update_state(auc_score(female_gts_np, female_probs_np), step_res['batch_size'])
+        # args.val_metrics[f'f1:val:male'].update_state(f1_score(male_gts_np, male_probs_np, average='weighted'), step_res['batch_size'])
+        # args.val_metrics[f'tpr:val:male'].update_state(tpr_score(male_gts_np, male_probs_np), step_res['batch_size'])
+        # args.val_metrics[f'auc:val:male'].update_state(auc_score(male_gts_np, male_probs_np), step_res['batch_size'])
+        # args.val_metrics[f'f1:val:female'].update_state(f1_score(female_gts_np, female_probs_np, average='weighted'), step_res['batch_size'])
+        # args.val_metrics[f'tpr:val:female'].update_state(tpr_score(female_gts_np, female_probs_np), step_res['batch_size'])
+        # args.val_metrics[f'auc:val:female'].update_state(auc_score(female_gts_np, female_probs_np), step_res['batch_size'])
 
 
 
