@@ -683,8 +683,8 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
-            'balanced_acc': balanced_acc * 100, \
-            'macro_acc': macro_acc * 100, \
+            # 'balanced_acc': balanced_acc * 100, \
+            # 'macro_acc': macro_acc * 100, \
             'batch_size': len(img), \
             'prob': output.exp(), \
             'gt': label}
