@@ -584,9 +584,9 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             step_res = fc_step(batch, network, criterion, optimizer, args, is_train=False)
             args.val_metrics['loss:val'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics['acc:val'].update_state(step_res['acc'], step_res['batch_size'])
-            args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy(), average='weighted'), step_res['batch_size'])
-            args.val_metrics['tpr:val'].update_state(tpr_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
-            args.val_metrics['auc:val'].update_state(auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
+            # args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy(), average='weighted'), step_res['batch_size'])
+            # args.val_metrics['tpr:val'].update_state(tpr_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
+            # args.val_metrics['auc:val'].update_state(auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
 
             for j in range(len(gender)):
                 gender_str = 'male' if gender[j] == 0 else 'female'
