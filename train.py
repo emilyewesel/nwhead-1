@@ -26,6 +26,9 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from PIL import Image
 import torch.nn.functional as F
+from sklearn.metrics import f1_score, roc_auc_score, roc_curve, auc
+import math 
+
 
 
 
@@ -142,7 +145,7 @@ class Parser(argparse.ArgumentParser):
                   default=1e-4, help='Weight decay')
         self.add_argument('--arch', type=str, default='resnet18')
         self.add_argument(
-          '--train_method', default='fchead')
+          '--train_method', default='nwhead')
         self.add_bool_arg('freeze_featurizer', False)
 
         # NW head parameters
@@ -416,6 +419,15 @@ def main():
             'macro_acc:val:ensemble:female',
             'macro_acc:val:knn:female',
             'macro_acc:val:hnsw:female',
+            'f1:val:random',
+            'f1:val:full',
+            'f1:val:cluster',
+            'tpr:val:random',
+            'tpr:val:full',
+            'tpr:val:cluster',
+            'auc:val:random',
+            'auc:val:full',
+            'auc:val:cluster',
         ]
 
 
@@ -515,6 +527,17 @@ def balanced_acc_fcn(preds, gts, class_labels):
 
 def macro_acc_fcn(preds, gts, class_labels):
     return balanced_acc_fcn(preds, gts, class_labels) * 100
+def tpr_score(y_true, y_pred):
+    # Calculate True Positive Rate (TPR)
+    tpr = sum((y_true == 1) & (y_pred == 1)) / sum(y_true == 1)
+    return tpr if not math.isnan(tpr) else 0.0
+
+def auc_score(y_true, y_pred_proba):
+    # Calculate Area Under the Curve (AUC)
+    fpr, tpr, _ = roc_curve(y_true, y_pred_proba)
+    auc_value = auc(fpr, tpr)
+    return auc_value if not math.isnan(auc_value) else 0.0
+
 
 def train_epoch(train_loader, network, criterion, optimizer, args):
     """Train for one epoch."""
@@ -552,6 +575,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             step_res = fc_step(batch, network, criterion, optimizer, args, is_train=False)
             args.val_metrics['loss:val'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics['acc:val'].update_state(step_res['acc'], step_res['batch_size'])
+            args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'], step_res['pred'], average='weighted'), step_res['batch_size'])
+            args.val_metrics['tpr:val'].update_state(tpr_score(step_res['gt'], step_res['pred']), step_res['batch_size'])
+            args.val_metrics['auc:val'].update_state(auc_score(step_res['gt'], step_res['pred']), step_res['batch_size'])
+
             for j in range(len(gender)):
                 gender_str = 'male' if gender[j] == 0 else 'female'
                 probs[gender_str].append(step_res['prob'][j].unsqueeze(0))
@@ -561,6 +588,9 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=False, mode=mode)
             args.val_metrics[f'loss:val:{mode}'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics[f'acc:val:{mode}'].update_state(step_res['acc'], step_res['batch_size'])
+            args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'], step_res['pred'], average='weighted'), step_res['batch_size'])
+            args.val_metrics[f'tpr:val:{mode}'].update_state(tpr_score(step_res['gt'], step_res['pred']), step_res['batch_size'])
+            args.val_metrics[f'auc:val:{mode}'].update_state(auc_score(step_res['gt'], step_res['pred']), step_res['batch_size'])
 
             # Separate metrics for males and females
             for j in range(len(gender)):
