@@ -450,6 +450,9 @@ def main():
             # 'loss:val:male',
             'acc:val:male',
             'ece:val:male',
+            'f1:val',
+            'tpr:val',
+            'auc:val'
         ] 
     args.metrics = {}
     args.metrics.update({key: Metric() for key in list_of_metrics})
