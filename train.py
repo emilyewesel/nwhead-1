@@ -264,6 +264,7 @@ def main():
         baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
         train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train=True)
         val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train=False)
+        print("initialized datasets")
         train_dataset.num_classes = 2
         genders = train_dataset.genders
         # train_dataset.targets = train_dataset._labels  # Add this line
