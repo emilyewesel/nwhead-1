@@ -541,6 +541,7 @@ def tpr_score(y_true, y_pred):
     # Calculate True Positive Rate (TPR)
     print("y_true", y_true)
     print("y_pred", y_pred)
+    y_pred = y_pred > 0.5
     tpr = sum((y_true == 1) & (y_pred == 1)) / sum(y_true == 1)
     return tpr if not math.isnan(tpr) else 0.0
 
@@ -670,7 +671,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         # args.val_metrics[f'tpr:val:{mode}:male'].update_state(tpr_score(male_gts_np, male_probs_np), step_res['batch_size'])
         # args.val_metrics[f'auc:val:{mode}:male'].update_state(auc_score(male_gts_np, male_probs_np), step_res['batch_size'])
         # args.val_metrics[f'f1:val:{mode}:female'].update_state(f1_score(female_gts_np, female_probs_np, average='weighted'), step_res['batch_size'])
-        # args.val_metrics[f'tpr:val:{mode}:female'].update_state(tpr_score(female_gts_np, female_probs_np), step_res['batch_size'])
+        args.val_metrics[f'tpr:val:{mode}:female'].update_state(tpr_score(female_gts_np, female_probs_np).to(args.device), step_res['batch_size'])
         # args.val_metrics[f'auc:val:{mode}:female'].update_state(auc_score(female_gts_np, female_probs_np), step_res['batch_size'])
 
 
