@@ -41,7 +41,7 @@ class ChexpertDataset(Dataset):
         #impute zeros into no finding if there is nothing
         #only keep frontal view from the column Frontal/Lateral
         #test csv file has the info in the name
-        self.df = self.df[self.df["Cardiomegaly"].isin([0, 1])]
+        self.df = self.df[self.df["Pneumothorax"].isin([0, 1])]
         # self.df["Cardiomegaly"].fillna(0, inplace=True)
         self.df = self.df[self.df['Frontal/Lateral'] == 'Frontal']
         # self.df.dropna(subset=['No Finding'], inplace=True)
@@ -49,13 +49,13 @@ class ChexpertDataset(Dataset):
         self.df = self.df[self.df.iloc[:, 1].isin(["Female", "Male"])]
         print("are we training", train)
         if train:
-            print("before", len(self.df[(self.df["Sex"] == "Female") & (self.df["Cardiomegaly"] == 1)]))
+            print("before", len(self.df[(self.df["Sex"] == "Female") & (self.df["Pneumothorax"] == 1)]))
         if train:
-            female_indices = self.df[(self.df["Sex"] == "Female") & (self.df["Cardiomegaly"] == 1)].index
+            female_indices = self.df[(self.df["Sex"] == "Female") & (self.df["Pneumothorax"] == 1)].index
             num_female_samples = len(female_indices)
             num_samples_to_convert = int(0.25 * num_female_samples)
             indices_to_convert = np.random.choice(female_indices, num_samples_to_convert, replace=False)
-            self.df.loc[indices_to_convert, "Cardiomegaly"] = 0
+            self.df.loc[indices_to_convert, "Pneumothorax"] = 0
             print("we converted", indices_to_convert)
         print(self.df.iloc[:10, 1])
         # self.df.dropna(subset=['Sex'], inplace=True)
@@ -64,9 +64,9 @@ class ChexpertDataset(Dataset):
         # self.df = self.df[self.df["Cardiomegaly"]].isin([0.0, 1.0])
         # self.df = self.df[self.df.Cardiomegaly != -1]
         # print(self.df["Cardiomegaly"])
-        self.targets = torch.tensor(self.df['Cardiomegaly'].values, dtype=torch.long)  # Assuming 'No Finding' is your target column
+        self.targets = torch.tensor(self.df['Pneumothorax'].values, dtype=torch.long)  # Assuming 'No Finding' is your target column
         if train:
-            print("after", len(self.df[(self.df["Sex"] == "Female") & (self.df["Cardiomegaly"] == 1)]))
+            print("after", len(self.df[(self.df["Sex"] == "Female") & (self.df["Pneumothorax"] == 1)]))
         # self.genders = list(self.df['Sex'])  # Extracting gender information
         # Modify this line in ChexpertDataset class
         # self.genders = list(self.df.iloc[:, 1])  # Extracting information from the second column
