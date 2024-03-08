@@ -42,14 +42,14 @@ class ChexpertDataset(Dataset):
         #only keep frontal view from the column Frontal/Lateral
         #test csv file has the info in the name
         
-        self.df["No Finding"].fillna(0, inplace=True)
+        self.df["Cardiomegaly"].fillna(0, inplace=True)
         self.df = self.df[self.df['Frontal/Lateral'] == 'Frontal']
         # self.df.dropna(subset=['No Finding'], inplace=True)
         self.df.dropna(subset=["Sex"], inplace=True)
         self.df = self.df[self.df.iloc[:, 1].isin(["Female", "Male"])]
         print("are we training", train)
         if train:
-            print("before", len(self.df[(self.df["Sex"] == "Female") & (self.df["No Finding"] == 1)]))
+            print("before", len(self.df[(self.df["Sex"] == "Female") & (self.df["Cardiomegaly"] == 1)]))
         # if train:
             # female_indices = self.df[(self.df["Sex"] == "Female") & (self.df["No Finding"] == 1)].index
             # num_female_samples = len(female_indices)
@@ -64,9 +64,9 @@ class ChexpertDataset(Dataset):
         # self.df = self.df[self.df["Cardiomegaly"]].isin([0.0, 1.0])
         # self.df = self.df[self.df.Cardiomegaly != -1]
         # print(self.df["Cardiomegaly"])
-        self.targets = torch.tensor(self.df['No Finding'].values, dtype=torch.long)  # Assuming 'No Finding' is your target column
+        self.targets = torch.tensor(self.df['Cardiomegaly'].values, dtype=torch.long)  # Assuming 'No Finding' is your target column
         if train:
-            print("after", len(self.df[(self.df["Sex"] == "Female") & (self.df["No Finding"] == 1)]))
+            print("after", len(self.df[(self.df["Sex"] == "Female") & (self.df["Cardiomegaly"] == 1)]))
         # self.genders = list(self.df['Sex'])  # Extracting gender information
         # Modify this line in ChexpertDataset class
         # self.genders = list(self.df.iloc[:, 1])  # Extracting information from the second column
