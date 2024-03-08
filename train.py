@@ -42,14 +42,14 @@ class ChexpertDataset(Dataset):
         #only keep frontal view from the column Frontal/Lateral
         #test csv file has the info in the name
         
-        self.df["No Finding"].fillna(0, inplace=True)
+        self.df["Cardiomegaly"].fillna(0, inplace=True)
         self.df = self.df[self.df['Frontal/Lateral'] == 'Frontal']
         # self.df.dropna(subset=['No Finding'], inplace=True)
         self.df.dropna(subset=["Sex"], inplace=True)
         self.df = self.df[self.df.iloc[:, 1].isin(["Female", "Male"])]
         print("are we training", train)
         if train:
-            print("before", len(self.df[(self.df["Sex"] == "Female") & (self.df["No Finding"] == 1)]))
+            print("before", len(self.df[(self.df["Sex"] == "Female") & (self.df["Cardiomegaly"] == 1)]))
         # if train:
             # female_indices = self.df[(self.df["Sex"] == "Female") & (self.df["No Finding"] == 1)].index
             # num_female_samples = len(female_indices)
