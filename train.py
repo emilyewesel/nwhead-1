@@ -601,7 +601,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             args.val_metrics[f'loss:val:{mode}'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics[f'acc:val:{mode}'].update_state(step_res['acc'], step_res['batch_size'])
             # args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy(), average='weighted').to(args.device), step_res['batch_size'])
-            args.val_metrics[f'tpr:val:{mode}'].update_state(tpr_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()).to(args.device), step_res['batch_size'])
+            # args.val_metrics[f'tpr:val:{mode}'].update_state(tpr_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()).to(args.device), step_res['batch_size'])
             # args.val_metrics[f'auc:val:{mode}'].update_state(auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
 
             # Separate metrics for males and females
@@ -650,7 +650,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         # args.val_metrics[f'tpr:val:male'].update_state(tpr_score(male_gts_np, male_probs_np), step_res['batch_size'])
         # args.val_metrics[f'auc:val:male'].update_state(auc_score(male_gts_np, male_probs_np), step_res['batch_size'])
         # args.val_metrics[f'f1:val:female'].update_state(f1_score(female_gts_np, female_probs_np, average='weighted'), step_res['batch_size'])
-        # args.val_metrics[f'tpr:val:female'].update_state(tpr_score(female_gts_np, female_probs_np), step_res['batch_size'])
+        args.val_metrics[f'tpr:val:female'].update_state(tpr_score(female_gts_np, female_probs_np).to(args.device), step_res['batch_size'])
         # args.val_metrics[f'auc:val:female'].update_state(auc_score(female_gts_np, female_probs_np), step_res['batch_size'])
 
 
