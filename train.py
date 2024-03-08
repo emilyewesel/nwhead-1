@@ -539,6 +539,8 @@ def macro_acc_fcn(preds, gts, class_labels):
     return balanced_acc_fcn(preds, gts, class_labels) * 100
 def tpr_score(y_true, y_pred):
     # Calculate True Positive Rate (TPR)
+    print("y_true", y_true)
+    print("y_pred", y_pred)
     tpr = sum((y_true == 1) & (y_pred == 1)) / sum(y_true == 1)
     return tpr if not math.isnan(tpr) else 0.0
 
