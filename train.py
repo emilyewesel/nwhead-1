@@ -145,7 +145,7 @@ class Parser(argparse.ArgumentParser):
                   default=1e-4, help='Weight decay')
         self.add_argument('--arch', type=str, default='resnet18')
         self.add_argument(
-          '--train_method', default='fchead')
+          '--train_method', default='nwhead')
         self.add_bool_arg('freeze_featurizer', False)
 
         # NW head parameters
@@ -598,7 +598,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=False, mode=mode)
             args.val_metrics[f'loss:val:{mode}'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics[f'acc:val:{mode}'].update_state(step_res['acc'], step_res['batch_size'])
-            # args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy(), average='weighted'), step_res['batch_size'])
+            args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy(), average='weighted').to(args.device), step_res['batch_size'])
             # args.val_metrics[f'tpr:val:{mode}'].update_state(tpr_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
             # args.val_metrics[f'auc:val:{mode}'].update_state(auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
 
