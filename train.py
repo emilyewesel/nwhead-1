@@ -41,8 +41,8 @@ class ChexpertDataset(Dataset):
         #impute zeros into no finding if there is nothing
         #only keep frontal view from the column Frontal/Lateral
         #test csv file has the info in the name
-        
-        self.df["Cardiomegaly"].fillna(0, inplace=True)
+        self.df = self.df[self.df["Cardiomegaly"].isin([0, 1])]
+        # self.df["Cardiomegaly"].fillna(0, inplace=True)
         self.df = self.df[self.df['Frontal/Lateral'] == 'Frontal']
         # self.df.dropna(subset=['No Finding'], inplace=True)
         self.df.dropna(subset=["Sex"], inplace=True)
