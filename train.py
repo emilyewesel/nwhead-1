@@ -59,31 +59,19 @@ class ChexpertDataset(Dataset):
         self.genders = self.df.iloc[:, 1].dropna().map({'Female': 1, 'Male': 0}).astype(int).tolist()
 
 
-
-
     def __len__(self):
         return len(self.df)
 
     def __getitem__(self, idx):
         img_name = self.df.iloc[idx, 0].split('/', 1)[-1]
         img_name = os.path.join(self.base_path, img_name)
-        # img_name = os.path.join(self.base_path, self.df.iloc[idx, 0])  # Assuming the first column contains filenames
-        image = Image.open(img_name).convert('RGB')  # Adjust the conversion based on your images
-        
-        # print(image_array)
-
-        # # Display the image using Matplotlib
-        # plt.imshow(image_array)
-        # plt.axis('off')  # Optional: Turn off axis labels
-        # plt.show()
+        image = Image.open(img_name).convert('RGB')  
 
         label = self.targets[idx]
         gender = self.genders[idx]
 
         if self.transform:
             image = self.transform(image)
-        image_array = np.array(image)
-        # print(image_array)
 
         return image, label, gender
 
@@ -129,6 +117,8 @@ class Parser(argparse.ArgumentParser):
         self.add_argument(
           '--train_method', default='nwhead')
         self.add_bool_arg('freeze_featurizer', False)
+        self.add_argument('--mode', type=float,
+                  default="No Finding")
 
         # NW head parameters
         self.add_argument('--kernel_type', type=str, default='euclidean',
@@ -300,9 +290,6 @@ def main():
                         feat_dim, 
                         num_classes)
     elif args.train_method == 'nwhead':
-        # print("WRONG!! WRONG!! init")
-        print(len(train_dataset))
-        print(len(genders), genders[0:20])
         network = NWNet(featurizer, 
                         num_classes,
                         support_dataset=train_dataset,
@@ -543,7 +530,6 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
         if args.train_method == 'fchead':
             step_res = fc_step(batch, network, criterion, optimizer, args, is_train=True)
         else:
-            # print("WRONG!! WRONG!!")
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=True)
         args.metrics['loss:train'].update_state(step_res['loss'], step_res['batch_size'])
         args.metrics['acc:train'].update_state(step_res['acc'], step_res['batch_size'])
@@ -579,7 +565,6 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
                 probs[gender_str].append(step_res['prob'][j].unsqueeze(0))
                 gts[gender_str].append(step_res['gt'][j].unsqueeze(0))
         else:
-            # print("WRONG!! WRONG!! eval")
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=False, mode=mode)
             args.val_metrics[f'loss:val:{mode}'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics[f'acc:val:{mode}'].update_state(step_res['acc'], step_res['batch_size'])
@@ -618,8 +603,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     female_balanced_acc = balanced_acc_fcn(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
     male_macro_acc = macro_acc_fcn(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
     female_macro_acc = macro_acc_fcn(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
-    if mode == "random":
-        print("WOMEN!!")
+
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
     
     if args.train_method == 'fchead':
@@ -633,14 +617,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         # args.val_metrics[f'tpr:val:male'].update_state(tpr_score(male_gts_np, male_probs_np), step_res['batch_size'])
         # args.val_metrics[f'auc:val:male'].update_state(auc_score(male_gts_np, male_probs_np), step_res['batch_size'])
         # args.val_metrics[f'f1:val:female'].update_state(f1_score(female_gts_np, female_probs_np, average='weighted'), step_res['batch_size'])
-        args.val_metrics[f'tpr:val:female'].update_state(tpr_score(female_gts_np, female_probs_np).to(args.device), step_res['batch_size'])
+        # args.val_metrics[f'tpr:val:female'].update_state(tpr_score(female_gts_np, female_probs_np).to(args.device), step_res['batch_size'])
         # args.val_metrics[f'auc:val:female'].update_state(auc_score(female_gts_np, female_probs_np), step_res['batch_size'])
-
-
-
         return args.val_metrics['acc:val'].result()
     else:
-        # print("WRONG!! WRONG!!")
         args.val_metrics[f'acc:val:{mode}:male'].update_state(male_acc * 100, 1)
         # args.val_metrics[f'ece:val:{mode}:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:{mode}:female'].update_state(female_acc * 100, 1)
@@ -653,7 +633,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         # args.val_metrics[f'tpr:val:{mode}:male'].update_state(tpr_score(male_gts_np, male_probs_np), step_res['batch_size'])
         # args.val_metrics[f'auc:val:{mode}:male'].update_state(auc_score(male_gts_np, male_probs_np), step_res['batch_size'])
         # args.val_metrics[f'f1:val:{mode}:female'].update_state(f1_score(female_gts_np, female_probs_np, average='weighted'), step_res['batch_size'])
-        args.val_metrics[f'tpr:val:{mode}:female'].update_state(tpr_score(female_gts_np, female_probs_np).to(args.device), step_res['batch_size'])
+        # args.val_metrics[f'tpr:val:{mode}:female'].update_state(tpr_score(female_gts_np, female_probs_np).to(args.device), step_res['batch_size'])
         # args.val_metrics[f'auc:val:{mode}:female'].update_state(auc_score(female_gts_np, female_probs_np), step_res['batch_size'])
 
 
