@@ -35,46 +35,28 @@ import math
 
 
 class ChexpertDataset(Dataset):
-    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True):
+    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=True, mode = "Cardiomegaly"):
         self.df = pd.read_csv(csv_file)
-        #make argument the class name
-        #impute zeros into no finding if there is nothing
-        #only keep frontal view from the column Frontal/Lateral
-        #test csv file has the info in the name
-        self.df = self.df[self.df["Cardiomegaly"].isin([0, 1])]
-        # self.df["Cardiomegaly"].fillna(0, inplace=True)
+        if mode == "Cardiomegaly":
+            self.df = self.df[self.df["Cardiomegaly"].isin([0, 1])]
+        elif mode == "Pneumothorax":
+            self.df = self.df[self.df["Pneumothorax"].isin([0, 1])]
+        if mode == "No Finding":
+            self.df["No Finding"].fillna(0, inplace=True)
         self.df = self.df[self.df['Frontal/Lateral'] == 'Frontal']
-        # self.df.dropna(subset=['No Finding'], inplace=True)
+        
         self.df.dropna(subset=["Sex"], inplace=True)
         self.df = self.df[self.df.iloc[:, 1].isin(["Female", "Male"])]
-        print("are we training", train)
-        if train:
-            print("before", len(self.df[(self.df["Sex"] == "Female") & (self.df["Cardiomegaly"] == 1)]))
-        # if train:
-        #     female_indices = self.df[(self.df["Sex"] == "Female") & (self.df["Cardiomegaly"] == 1)].index
-        #     num_female_samples = len(female_indices)
-        #     num_samples_to_convert = int(0.25 * num_female_samples)
-        #     indices_to_convert = np.random.choice(female_indices, num_samples_to_convert, replace=False)
-        #     self.df.loc[indices_to_convert, "Cardiomegaly"] = 0
-        #     print("we converted", indices_to_convert)
-        print(self.df.iloc[:10, 1])
-        # self.df.dropna(subset=['Sex'], inplace=True)
+        if train and inject_underdiagnosis_bias:
+            female_indices = self.df[(self.df["Sex"] == "Female") & (self.df[mode] == 1)].index
+            num_female_samples = len(female_indices)
+            num_samples_to_convert = int(0.25 * num_female_samples)
+            indices_to_convert = np.random.choice(female_indices, num_samples_to_convert, replace=False)
+            self.df.loc[indices_to_convert, mode] = 0
         self.base_path = train_base_path if train else test_base_path
         self.transform = transform
-        # self.df = self.df[self.df["Cardiomegaly"]].isin([0.0, 1.0])
-        # self.df = self.df[self.df.Cardiomegaly != -1]
-        # print(self.df["Cardiomegaly"])
-        self.targets = torch.tensor(self.df['Cardiomegaly'].values, dtype=torch.long)  # Assuming 'No Finding' is your target column
-        if train:
-            print("after", len(self.df[(self.df["Sex"] == "Female") & (self.df["Cardiomegaly"] == 1)]))
-        # self.genders = list(self.df['Sex'])  # Extracting gender information
-        # Modify this line in ChexpertDataset class
-        # self.genders = list(self.df.iloc[:, 1])  # Extracting information from the second column
-        # Modify this line in ChexpertDataset class
-        # self.genders = self.df.iloc[:, 1].map({'Female': 1, 'Male': 0}).tolist()
+        self.targets = torch.tensor(self.df[mode].values, dtype=torch.long)  
         self.genders = self.df.iloc[:, 1].dropna().map({'Female': 1, 'Male': 0}).astype(int).tolist()
-        print(len(self.targets), sum(self.targets), np.unique(self.targets))
-        # self.genders = self.df.iloc[:, 1].map({'Female': 1, 'Male': 0}).astype(int).tolist()
 
 
 
