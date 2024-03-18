@@ -732,7 +732,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'tpr:val:{mode}:male'].update_state(tpr_score(male_gts_np, male_predictions), step_res['batch_size'])
         args.val_metrics[f'auc:val:{mode}:male'].update_state(auc_score(male_gts_np, male_predictions), step_res['batch_size'])
         args.val_metrics[f'f1:val:{mode}:female'].update_state(f1_score(female_gts_np, female_predictions, average='weighted'), step_res['batch_size'])
-        args.val_metrics[f'tpr:val:{mode}:female'].update_state(tpr_score(female_gts_np, female_predictions).to(args.device), step_res['batch_size'])
+        args.val_metrics[f'tpr:val:{mode}:female'].update_state(tpr_score(female_gts_np, female_predictions), step_res['batch_size'])
         args.val_metrics[f'auc:val:{mode}:female'].update_state(auc_score(female_gts_np, female_predictions), step_res['batch_size'])
 
 
