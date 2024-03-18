@@ -453,7 +453,7 @@ def main():
             'f1:val:cluster:male', 'tpr:val:cluster:male', 'auc:val:cluster:male',
             'f1:val:random:female', 'tpr:val:random:female', 'auc:val:random:female',
             'f1:val:full:female', 'tpr:val:full:female', 'auc:val:full:female',
-            'f1:val:cluster:female', 'tpr:val:cluster:female', 'auc:val:cluster:female'
+            'f1:val:cluster:female', 'tpr:val:cluster:female', 'auc:val:cluster:female',
             'f1:val:knn:male',
             'f1:val:hnsw:male',
             'f1:val:ensemble:male',
