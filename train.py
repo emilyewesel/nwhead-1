@@ -82,6 +82,45 @@ class ChexpertDataset(Dataset):
         sum_weights = sum(class_weights)
         class_weights = [weight / sum_weights for weight in class_weights]
         return torch.tensor(class_weights)
+import numpy as np
+
+class EarlyStopping:
+    def __init__(self, patience=5, mode='min', delta=0):
+        self.patience = patience
+        self.mode = mode
+        self.delta = delta
+        self.counter = 0
+        self.best_score = None
+        self.early_stop = False
+        if self.mode == 'min':
+            self.best_score = np.Inf
+        else:
+            self.best_score = -np.Inf
+
+    def __call__(self, val_loss):
+        if self.mode == 'min':
+            score = -val_loss
+        else:
+            score = val_loss
+
+        if self.best_score is None:
+            self.best_score = score
+            self.save_checkpoint(val_loss)
+        elif score < self.best_score + self.delta:
+            self.counter += 1
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_score = score
+            self.save_checkpoint(val_loss)
+            self.counter = 0
+
+    def save_checkpoint(self, val_loss):
+        if self.mode == 'min':
+            print(f'Validation loss decreased ({self.best_score:.6f} --> {val_loss:.6f}). Saving model...')
+        else:
+            print(f'Validation loss increased ({self.best_score:.6f} --> {val_loss:.6f}). Saving model...')
+
 
 
 
@@ -447,6 +486,7 @@ def main():
     # Training loop
     start_epoch = 1
     best_acc1 = 0
+    early_stopping = EarlyStopping(patience=5, mode='min')
     for epoch in range(start_epoch, args.num_epochs+1):
         print('Epoch:', epoch)
         if args.train_method == 'nwhead':
@@ -494,6 +534,12 @@ def main():
             print("Val loss={:.6f}, val acc={:.6f}".format(
                 args.val_metrics['loss:val:cluster'].result(), args.val_metrics['acc:val:cluster'].result()))
             print()
+            early_stopping(args.val_metrics['loss:val:full'].result())
+
+        # If early stopping criterion met, break the loop
+        if early_stopping.early_stop:
+            print("Early stopping")
+            break
 
         if args.use_wandb:
             wandb.log({k: v.result() for k, v in args.metrics.items()})
