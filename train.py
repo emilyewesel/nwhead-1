@@ -36,7 +36,7 @@ from collections import Counter
 
 
 class ChexpertDataset(Dataset):
-    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=True, mode = "Pneumothorax"):
+    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=True, mode = "Cardiomegaly"):
         self.df = pd.read_csv(csv_file)
         if mode == "Cardiomegaly":
             self.df = self.df[self.df["Cardiomegaly"].isin([0, 1])]
@@ -333,7 +333,7 @@ def main():
     if args.freeze_featurizer:
         for param in featurizer.parameters():
             param.requires_grad = False
-    args.train_method = 'fchead'
+    # args.train_method = 'fchead'
     if args.train_method == 'fchead':
         network = FCNet(featurizer, 
                         feat_dim, 
