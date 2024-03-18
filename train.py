@@ -28,6 +28,7 @@ from PIL import Image
 import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score, roc_curve, auc
 import math 
+from collections import Counter
 
 
 
@@ -74,6 +75,13 @@ class ChexpertDataset(Dataset):
             image = self.transform(image)
 
         return image, label, gender
+    def compute_class_weights(self):
+        class_counts = Counter(self.targets.numpy())
+        total_samples = sum(class_counts.values())
+        class_weights = [total_samples / (class_counts[i] * len(class_counts)) for i in range(len(class_counts))]
+        sum_weights = sum(class_weights)
+        class_weights = [weight / sum_weights for weight in class_weights]
+        return torch.tensor(class_weights)
 
 
 
@@ -240,6 +248,8 @@ def main():
         train_dataset.num_classes = 2
         genders = train_dataset.genders
         # train_dataset.targets = train_dataset._labels  # Add this line
+        class_weights = train_dataset.compute_class_weights()
+        print("Class Weights:", class_weights)
 
     elif args.dataset == 'flower':
         train_dataset = datasets.Flowers102(args.data_dir, 'train', transform_train, download=True)
@@ -306,7 +316,8 @@ def main():
     network.to(args.device)
 
     # Set loss, optimizer, and scheduler
-    criterion = torch.nn.NLLLoss()
+    # weight = torch.tensor()
+    criterion = torch.nn.NLLLoss(weight = class_weights)
     optimizer = torch.optim.SGD(network.parameters(), 
                                 lr=args.lr, 
                                 momentum=0.9, 
