@@ -289,6 +289,9 @@ def main():
         # train_dataset.targets = train_dataset._labels  # Add this line
         class_weights = train_dataset.compute_class_weights()
         print("Class Weights:", class_weights)
+        class_counts_male, class_counts_female = train_dataset.compute_class_weights()
+        print("Male class counts:", class_counts_male)
+        print("Female class counts:", class_counts_female)
 
     elif args.dataset == 'flower':
         train_dataset = datasets.Flowers102(args.data_dir, 'train', transform_train, download=True)
