@@ -147,7 +147,7 @@ class Parser(argparse.ArgumentParser):
         self.add_argument('--batch_size', type=int,
                   default=64, help='Batch size')
         self.add_argument('--num_steps_per_epoch', type=int,
-                  default=1000, help='Num steps per epoch')
+                  default=100000, help='Num steps per epoch')
         self.add_argument('--num_val_steps_per_epoch', type=int,
                   default=100000, help='Num validation steps per epoch')
         self.add_argument('--num_epochs', type=int, default=200,
@@ -333,7 +333,7 @@ def main():
     if args.freeze_featurizer:
         for param in featurizer.parameters():
             param.requires_grad = False
-    # args.train_method = 'fchead'
+    args.train_method = 'fchead'
     if args.train_method == 'fchead':
         network = FCNet(featurizer, 
                         feat_dim, 
@@ -500,7 +500,13 @@ def main():
             'ece:val:male',
             'f1:val',
             'tpr:val',
-            'auc:val'
+            'auc:val',
+            'f1:val:male',
+            'tpr:val:male',
+            'auc:val:male',
+            'f1:val:female',
+            'tpr:val:female',
+            'auc:val:female'
         ] 
     args.metrics = {}
     args.metrics.update({key: Metric() for key in list_of_metrics})
@@ -641,9 +647,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             step_res = fc_step(batch, network, criterion, optimizer, args, is_train=False)
             args.val_metrics['loss:val'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics['acc:val'].update_state(step_res['acc'], step_res['batch_size'])
-            # args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy(), average='weighted'), step_res['batch_size'])
-            # args.val_metrics['tpr:val'].update_state(tpr_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
-            # args.val_metrics['auc:val'].update_state(auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
+            predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
+            args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
+            args.val_metrics['tpr:val'].update_state(tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
+            args.val_metrics['auc:val'].update_state(auc_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
 
             for j in range(len(gender)):
                 gender_str = 'male' if gender[j] == 0 else 'female'
@@ -719,12 +726,12 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'balanced_acc:val:{mode}:female'].update_state(female_balanced_acc * 100, 1)
         # args.val_metrics[f'macro_acc:val:{mode}:male'].update_state(male_macro_acc*100, 1)
         # args.val_metrics[f'macro_acc:val:{mode}:female'].update_state(female_macro_acc * 100, 1)
-        # args.val_metrics[f'f1:val:{mode}:male'].update_state(f1_score(male_gts_np, male_probs_np, average='weighted'), step_res['batch_size'])
-        # args.val_metrics[f'tpr:val:{mode}:male'].update_state(tpr_score(male_gts_np, male_probs_np), step_res['batch_size'])
-        # args.val_metrics[f'auc:val:{mode}:male'].update_state(auc_score(male_gts_np, male_probs_np), step_res['batch_size'])
-        # args.val_metrics[f'f1:val:{mode}:female'].update_state(f1_score(female_gts_np, female_probs_np, average='weighted'), step_res['batch_size'])
-        # args.val_metrics[f'tpr:val:{mode}:female'].update_state(tpr_score(female_gts_np, female_probs_np).to(args.device), step_res['batch_size'])
-        # args.val_metrics[f'auc:val:{mode}:female'].update_state(auc_score(female_gts_np, female_probs_np), step_res['batch_size'])
+        args.val_metrics[f'f1:val:{mode}:male'].update_state(f1_score(male_gts_np, male_predictions, average='weighted'), step_res['batch_size'])
+        args.val_metrics[f'tpr:val:{mode}:male'].update_state(tpr_score(male_gts_np, male_predictions), step_res['batch_size'])
+        args.val_metrics[f'auc:val:{mode}:male'].update_state(auc_score(male_gts_np, male_predictions), step_res['batch_size'])
+        args.val_metrics[f'f1:val:{mode}:female'].update_state(f1_score(female_gts_np, female_predictions, average='weighted'), step_res['batch_size'])
+        args.val_metrics[f'tpr:val:{mode}:female'].update_state(tpr_score(female_gts_np, female_predictions).to(args.device), step_res['batch_size'])
+        args.val_metrics[f'auc:val:{mode}:female'].update_state(auc_score(female_gts_np, female_predictions), step_res['batch_size'])
 
 
 
