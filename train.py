@@ -626,8 +626,9 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             args.val_metrics[f'loss:val:{mode}'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics[f'acc:val:{mode}'].update_state(step_res['acc'], step_res['batch_size'])
             print("f1 gt", step_res['gt'].cpu().numpy())
-            print("f1 prob", step_res['prob'].cpu().numpy())
-            args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy(), average='weighted').to(args.device), step_res['batch_size'])
+            predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
+
+            args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted').to(args.device), step_res['batch_size'])
             # args.val_metrics[f'tpr:val:{mode}'].update_state(tpr_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()).to(args.device), step_res['batch_size'])
             # args.val_metrics[f'auc:val:{mode}'].update_state(auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
 
