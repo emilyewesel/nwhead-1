@@ -125,7 +125,7 @@ class Parser(argparse.ArgumentParser):
         self.add_argument(
           '--train_method', default='nwhead')
         self.add_bool_arg('freeze_featurizer', False)
-        self.add_argument('--mode', type=float,
+        self.add_argument('--mode', type=str,
                   default="No Finding")
 
         # NW head parameters
