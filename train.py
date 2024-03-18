@@ -571,9 +571,9 @@ def main():
             early_stopping(args.val_metrics['loss:val:full'].result())
 
         # If early stopping criterion met, break the loop
-        if early_stopping.early_stop:
-            print("Early stopping")
-            break
+        # if early_stopping.early_stop:
+        #     print("Early stopping")
+        #     break
 
         if args.use_wandb:
             wandb.log({k: v.result() for k, v in args.metrics.items()})
@@ -718,6 +718,8 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'auc:val:female'].update_state(auc_score(female_gts_np, female_predictions), step_res['batch_size'])
         return args.val_metrics['acc:val'].result()
     else:
+        male_predictions = np.argmax(male_probs_np, axis=1)
+        female_predictions = np.argmax(female_probs_np, axis=1)
         args.val_metrics[f'acc:val:{mode}:male'].update_state(male_acc * 100, 1)
         # args.val_metrics[f'ece:val:{mode}:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:{mode}:female'].update_state(female_acc * 100, 1)
