@@ -317,7 +317,7 @@ def main():
 
     # Set loss, optimizer, and scheduler
     # weight = torch.tensor()
-    criterion = torch.nn.NLLLoss(weight = class_weights)
+    criterion = torch.nn.NLLLoss(weight = class_weights.to(args.device))
     optimizer = torch.optim.SGD(network.parameters(), 
                                 lr=args.lr, 
                                 momentum=0.9, 
