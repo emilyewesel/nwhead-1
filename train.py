@@ -391,9 +391,9 @@ def main():
             'balanced_acc:val:random',   # New metric for balanced accuracy
             'balanced_acc:val:full',     # New metric for balanced accuracy
             'balanced_acc:val:cluster',  # New metric for balanced accuracy
-            'macro_acc:val:random',      # New metric for macro accuracy
-            'macro_acc:val:full',        # New metric for macro accuracy
-            'macro_acc:val:cluster',     # New metric for macro accuracy
+            # 'macro_acc:val:random',      # New metric for macro accuracy
+            # 'macro_acc:val:full',        # New metric for macro accuracy
+            # 'macro_acc:val:cluster',     # New metric for macro accuracy
             'ece:val:random',
             'ece:val:full',
             'ece:val:cluster',
@@ -406,18 +406,18 @@ def main():
             'balanced_acc:val:random:male',
             'balanced_acc:val:full:male',
             'balanced_acc:val:cluster:male',
-            'macro_acc:val:random:male',   # New metric for male macro accuracy
-            'macro_acc:val:full:male',     # New metric for male macro accuracy
-            'macro_acc:val:cluster:male',  # New metric for male macro accuracy
+            # 'macro_acc:val:random:male',   # New metric for male macro accuracy
+            # 'macro_acc:val:full:male',     # New metric for male macro accuracy
+            # 'macro_acc:val:cluster:male',  # New metric for male macro accuracy
             'ece:val:random:male',
             'ece:val:full:male',
             'ece:val:cluster:male',
             'balanced_acc:val:random:female',
             'balanced_acc:val:full:female',
             'balanced_acc:val:cluster:female',
-            'macro_acc:val:random:female',   # New metric for female macro accuracy
-            'macro_acc:val:full:female',     # New metric for female macro accuracy
-            'macro_acc:val:cluster:female',  # New metric for female macro accuracy
+            # 'macro_acc:val:random:female',   # New metric for female macro accuracy
+            # 'macro_acc:val:full:female',     # New metric for female macro accuracy
+            # 'macro_acc:val:cluster:female',  # New metric for female macro accuracy
             'ece:val:random:female',
             'ece:val:full:female',
             'ece:val:cluster:female',
@@ -427,18 +427,18 @@ def main():
             'balanced_acc:val:ensemble:male',
             'balanced_acc:val:knn:male',
             'balanced_acc:val:hnsw:male',
-            'macro_acc:val:ensemble:male',
-            'macro_acc:val:knn:male',
-            'macro_acc:val:hnsw:male',
+            # 'macro_acc:val:ensemble:male',
+            # 'macro_acc:val:knn:male',
+            # 'macro_acc:val:hnsw:male',
             'acc:val:ensemble:female',
             'acc:val:knn:female',
             'acc:val:hnsw:female',
             'balanced_acc:val:ensemble:female',
             'balanced_acc:val:knn:female',
             'balanced_acc:val:hnsw:female',
-            'macro_acc:val:ensemble:female',
-            'macro_acc:val:knn:female',
-            'macro_acc:val:hnsw:female',
+            # 'macro_acc:val:ensemble:female',
+            # 'macro_acc:val:knn:female',
+            # 'macro_acc:val:hnsw:female',
             'f1:val:random',
             'f1:val:full',
             'f1:val:cluster',
@@ -625,7 +625,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=False, mode=mode)
             args.val_metrics[f'loss:val:{mode}'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics[f'acc:val:{mode}'].update_state(step_res['acc'], step_res['batch_size'])
-            # args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy(), average='weighted').to(args.device), step_res['batch_size'])
+            args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy(), average='weighted').to(args.device), step_res['batch_size'])
             # args.val_metrics[f'tpr:val:{mode}'].update_state(tpr_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()).to(args.device), step_res['batch_size'])
             # args.val_metrics[f'auc:val:{mode}'].update_state(auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
 
@@ -684,8 +684,8 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         # args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:male'].update_state(male_balanced_acc*100, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:female'].update_state(female_balanced_acc * 100, 1)
-        args.val_metrics[f'macro_acc:val:{mode}:male'].update_state(male_macro_acc*100, 1)
-        args.val_metrics[f'macro_acc:val:{mode}:female'].update_state(female_macro_acc * 100, 1)
+        # args.val_metrics[f'macro_acc:val:{mode}:male'].update_state(male_macro_acc*100, 1)
+        # args.val_metrics[f'macro_acc:val:{mode}:female'].update_state(female_macro_acc * 100, 1)
         # args.val_metrics[f'f1:val:{mode}:male'].update_state(f1_score(male_gts_np, male_probs_np, average='weighted'), step_res['batch_size'])
         # args.val_metrics[f'tpr:val:{mode}:male'].update_state(tpr_score(male_gts_np, male_probs_np), step_res['batch_size'])
         # args.val_metrics[f'auc:val:{mode}:male'].update_state(auc_score(male_gts_np, male_probs_np), step_res['batch_size'])
