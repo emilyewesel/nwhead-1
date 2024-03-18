@@ -462,7 +462,26 @@ def main():
             'f1:val:hnsw',
             'f1:val:ensemble:female',
             'f1:val:knn:female',
-            'f1:val:hnsw:female'
+            'f1:val:hnsw:female',
+            'tpr:val:knn:male',
+            'tpr:val:hnsw:male',
+            'tpr:val:ensemble:male',
+            'tpr:val:ensemble',
+            'tpr:val:knn',
+            'tpr:val:hnsw',
+            'tpr:val:ensemble:female',
+            'tpr:val:knn:female',
+            'tpr:val:hnsw:female',
+            'auc:val:knn:male',
+            'auc:val:hnsw:male',
+            'auc:val:ensemble:male',
+            'auc:val:ensemble',
+            'auc:val:knn',
+            'auc:val:hnsw',
+            'auc:val:ensemble:female',
+            'auc:val:knn:female',
+            'auc:val:hnsw:female',
+
         ]
 
 
