@@ -628,7 +628,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             print("f1 gt", step_res['gt'].cpu().numpy())
             predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
 
-            args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted').to(args.device), step_res['batch_size'])
+            args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
             # args.val_metrics[f'tpr:val:{mode}'].update_state(tpr_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()).to(args.device), step_res['batch_size'])
             # args.val_metrics[f'auc:val:{mode}'].update_state(auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
 
