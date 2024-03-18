@@ -36,7 +36,7 @@ from collections import Counter
 
 
 class ChexpertDataset(Dataset):
-    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=True, mode = "Cardiomegaly"):
+    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=True, mode = "Pneumothorax"):
         self.df = pd.read_csv(csv_file)
         if mode == "Cardiomegaly":
             self.df = self.df[self.df["Cardiomegaly"].isin([0, 1])]
@@ -625,7 +625,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=False, mode=mode)
             args.val_metrics[f'loss:val:{mode}'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics[f'acc:val:{mode}'].update_state(step_res['acc'], step_res['batch_size'])
-            args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy(), average='weighted').to(args.device), step_res['batch_size'])
+            # args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy(), average='weighted').to(args.device), step_res['batch_size'])
             # args.val_metrics[f'tpr:val:{mode}'].update_state(tpr_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()).to(args.device), step_res['batch_size'])
             # args.val_metrics[f'auc:val:{mode}'].update_state(auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()), step_res['batch_size'])
 
