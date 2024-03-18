@@ -454,6 +454,15 @@ def main():
             'f1:val:random:female', 'tpr:val:random:female', 'auc:val:random:female',
             'f1:val:full:female', 'tpr:val:full:female', 'auc:val:full:female',
             'f1:val:cluster:female', 'tpr:val:cluster:female', 'auc:val:cluster:female'
+            'f1:val:knn:male',
+            'f1:val:hnsw:male',
+            'f1:val:ensemble:male',
+            'f1:val:ensemble',
+            'f1:val:knn',
+            'f1:val:hnsw',
+            'f1:val:ensemble:female',
+            'f1:val:knn:female',
+            'f1:val:hnsw:female'
         ]
 
 
