@@ -36,7 +36,7 @@ from collections import Counter
 
 
 class ChexpertDataset(Dataset):
-    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, mode = "Pneumothorax"):
+    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, mode = "Cardiomegaly"):
         self.df = pd.read_csv(csv_file)
         if mode == "Cardiomegaly":
             self.df = self.df[self.df["Cardiomegaly"].isin([0, 1])]
@@ -162,7 +162,7 @@ class Parser(argparse.ArgumentParser):
 
         # Machine learning parameters
         self.add_argument('--dataset', type=str, required=True)
-        self.add_argument('--lr', type=float, default=1e-2,
+        self.add_argument('--lr', type=float, default=5e-2,
                   help='Learning rate')
         self.add_argument('--batch_size', type=int,
                   default=64, help='Batch size')
@@ -722,7 +722,6 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     female_probs_np = female_probs.cpu().numpy()
     male_gts_np = male_gts.cpu().numpy()
     female_gts_np = female_gts.cpu().numpy()
-
 
     male_balanced_acc = balanced_acc_fcn(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
     female_balanced_acc = balanced_acc_fcn(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
