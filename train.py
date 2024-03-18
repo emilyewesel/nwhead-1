@@ -82,6 +82,26 @@ class ChexpertDataset(Dataset):
         sum_weights = sum(class_weights)
         class_weights = [weight / sum_weights for weight in class_weights]
         return torch.tensor(class_weights)
+    def compute_class_weights2(self):
+        class_counts_male = Counter()
+        class_counts_female = Counter()
+
+        for label, gender in zip(self.targets.numpy(), self.genders):
+            if gender == 0:  # Male
+                class_counts_male[label] += 1
+            else:  # Female
+                class_counts_female[label] += 1
+
+        return {
+            'male': {
+                'positive': class_counts_male[1],
+                'negative': class_counts_male[0]
+            },
+            'female': {
+                'positive': class_counts_female[1],
+                'negative': class_counts_female[0]
+            }
+        }
 import numpy as np
 
 class EarlyStopping:
@@ -289,9 +309,16 @@ def main():
         # train_dataset.targets = train_dataset._labels  # Add this line
         class_weights = train_dataset.compute_class_weights()
         print("Class Weights:", class_weights)
-        class_counts_male, class_counts_female = train_dataset.compute_class_weights()
-        print("Male class counts:", class_counts_male)
-        print("Female class counts:", class_counts_female)
+        
+        class_counts = train_dataset.compute_class_weights2()
+
+        print("Male class counts:")
+        print("Positive:", class_counts['male']['positive'])
+        print("Negative:", class_counts['male']['negative'])
+
+        print("\nFemale class counts:")
+        print("Positive:", class_counts['female']['positive'])
+        print("Negative:", class_counts['female']['negative'])
 
     elif args.dataset == 'flower':
         train_dataset = datasets.Flowers102(args.data_dir, 'train', transform_train, download=True)
