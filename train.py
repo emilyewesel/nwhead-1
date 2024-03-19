@@ -173,7 +173,7 @@ class Parser(argparse.ArgumentParser):
         self.add_argument('--num_epochs', type=int, default=200,
                   help='Total training epochs')
         self.add_argument('--scheduler_milestones', nargs='+', type=int,
-                  default=(100, 150), help='Step size for scheduler')
+                  default=(1000, 1500), help='Step size for scheduler')
         self.add_argument('--scheduler_gamma', type=float,
                   default=0.1, help='Multiplicative factor for scheduler')
         self.add_argument('--seed', type=int,
