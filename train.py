@@ -387,18 +387,18 @@ def main():
     # Set loss, optimizer, and scheduler
     # weight = torch.tensor()
     criterion = torch.nn.NLLLoss(weight = class_weights.to(args.device))
-    # optimizer = torch.optim.SGD(network.parameters(), 
-    #                             lr=args.lr, 
-    #                             momentum=0.9, 
-    #                             weight_decay=args.weight_decay, 
-    #                             nesterov=True)
+    optimizer = torch.optim.SGD(network.parameters(), 
+                                lr=args.lr, 
+                                momentum=0.9, 
+                                weight_decay=args.weight_decay, 
+                                nesterov=True)
     # optimizer = torch.optim.Adam(network.parameters(), 
     #                          lr=args.lr, 
     #                          weight_decay=args.weight_decay)
-    from torch.optim import AdamW
-    optimizer = AdamW(network.parameters(),
-                  lr=args.lr,
-                  weight_decay=args.weight_decay)
+    # from torch.optim import AdamW
+    # optimizer = AdamW(network.parameters(),
+    #               lr=args.lr,
+    #               weight_decay=args.weight_decay)
 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                           milestones=args.scheduler_milestones,
