@@ -392,12 +392,13 @@ def main():
     #                             momentum=0.9, 
     #                             weight_decay=args.weight_decay, 
     #                             nesterov=True)
-    optimizer = torch.optim.Adam(network.parameters(), 
-                             lr=args.lr, 
-                             weight_decay=args.weight_decay)
-    # optimizer = AdamW(network.parameters(),
-    #               lr=args.lr,
-    #               weight_decay=args.weight_decay)
+    # optimizer = torch.optim.Adam(network.parameters(), 
+    #                          lr=args.lr, 
+    #                          weight_decay=args.weight_decay)
+    from torch.optim import AdamW
+    optimizer = AdamW(network.parameters(),
+                  lr=args.lr,
+                  weight_decay=args.weight_decay)
 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                           milestones=args.scheduler_milestones,
