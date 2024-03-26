@@ -36,7 +36,7 @@ from collections import Counter
 
 
 class ChexpertDataset(Dataset):
-    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, mode = "Pneumothorax"):
+    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, mode = "Cardiomegaly"):
         self.df = pd.read_csv(csv_file)
         if mode == "Cardiomegaly":
             self.df = self.df[self.df["Cardiomegaly"].isin([0, 1])]
@@ -148,7 +148,7 @@ class Parser(argparse.ArgumentParser):
     def __init__(self):
         super(Parser, self).__init__(description='NW Head Training')
         # I/O parameters
-        self.add_argument('--models_dir', default='./',
+        self.add_argument('--models_dir', default='./saved_models/',
                   type=str, help='directory to save models')
         self.add_argument('--data_dir', default='./',
                   type=str, help='directory where data lives')
@@ -185,7 +185,7 @@ class Parser(argparse.ArgumentParser):
           '--train_method', default='nwhead')
         self.add_bool_arg('freeze_featurizer', False)
         self.add_argument('--mode', type=str,
-                  default="No Finding")
+                  default="Cardiomegaly")
 
         # NW head parameters
         self.add_argument('--kernel_type', type=str, default='euclidean',
@@ -637,8 +637,8 @@ def macro_acc_fcn(preds, gts, class_labels):
     return balanced_acc_fcn(preds, gts, class_labels) * 100
 def tpr_score(y_true, y_pred):
     # Calculate True Positive Rate (TPR)
-    print("y_true", y_true)
-    print("y_pred", y_pred)
+    # print("y_true", y_true)
+    # print("y_pred", y_pred)
     y_pred = y_pred > 0.5
     tpr = sum((y_true == 1) & (y_pred == 1)) / sum(y_true == 1)
     return tpr if not math.isnan(tpr) else 0.0
@@ -698,7 +698,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=False, mode=mode)
             args.val_metrics[f'loss:val:{mode}'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics[f'acc:val:{mode}'].update_state(step_res['acc'], step_res['batch_size'])
-            print("f1 gt", step_res['gt'].cpu().numpy())
+            # print("f1 gt", step_res['gt'].cpu().numpy())
             predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
 
             args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
