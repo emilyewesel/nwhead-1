@@ -10,9 +10,6 @@ from pprint import pprint
 import json
 import wandb
 import matplotlib.pyplot as plt
-
-# from data.bird import Cub200Dataset
-# from data.dog import StanfordDogDataset
 from util.metric import Metric, ECELoss
 from util.utils import parse_bool, ParseKwargs, summary, save_checkpoint, initialize_wandb
 from util import metric
@@ -29,8 +26,6 @@ import torch.nn.functional as F
 from sklearn.metrics import f1_score, roc_auc_score, roc_curve, auc
 import math 
 from collections import Counter
-
-
 
 
 
@@ -272,6 +267,19 @@ def main():
                   transforms.ToTensor(),
                   transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
                 ])
+    elif args.dataset in ['chexpert']:
+        transform_train = transforms.Compose([
+                  transforms.Resize((224, 224)),  # Resize to 224x224
+                  transforms.RandomRotation(20),  # rotation within the range [-20, 20] degrees
+                  transforms.RandomResizedCrop(224, scale=(0.8, 1.0)),  # random crop with scaling between 80% and 100%
+                  transforms.ColorJitter(brightness=0.1, contrast=0.1),transforms.ToTensor(),  # Convert the image to a tenso
+                  transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+                ])
+        transform_test = transforms.Compose([
+                  transforms.Resize((224, 224)),
+                  transforms.ToTensor(),
+                  transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+                  ])
     else:
         transform_train = transforms.Compose([
                   transforms.RandomResizedCrop(224),
@@ -346,12 +354,16 @@ def main():
         feat_dim = 512
         if args.dataset in ['cifar10', 'cifar100']:
             featurizer = load_model('CIFAR_ResNet18')
+        elif args.dataset in ['chexpert']:
+            featurizer = load_model('resnet18', pretrained=True)
         else:
             featurizer = load_model('resnet18')
     elif args.arch == 'densenet121':
         feat_dim = 1024
         if args.dataset in ['cifar10', 'cifar100']:
             featurizer = load_model('CIFAR_DenseNet121')
+        elif args.dataset in ['chexpert']:
+            featurizer = load_model('densenet121', pretrained=True)
         else:
             featurizer = load_model('densenet121')
     elif args.arch == 'dinov2_vits14':
