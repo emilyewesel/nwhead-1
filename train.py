@@ -97,7 +97,7 @@ class Parser(argparse.ArgumentParser):
         self.add_argument('--num_epochs', type=int, default=200,
                   help='Total training epochs')
         self.add_argument('--scheduler_milestones', nargs='+', type=int,
-                  default=(1000, 1500), help='Step size for scheduler')
+                  default=(50, 75), help='Step size for scheduler')
         self.add_argument('--scheduler_gamma', type=float,
                   default=0.1, help='Multiplicative factor for scheduler')
         self.add_argument('--seed', type=int,
@@ -241,8 +241,8 @@ def main():
         test_csv = '/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/valid.csv'
         baase = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
         baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
-        train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train=True)
-        val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train=False)
+        train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train_class=args.train_class, train=True)
+        val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train_class=args.train_class, train=False)
         print("initialized datasets")
         train_dataset.num_classes = 2
         genders = train_dataset.genders
@@ -459,7 +459,6 @@ def main():
             'loss:val',
             'acc:val',
             'ece:val',
-            'balanced_acc:train',
             'balanced_acc:val',
             'acc:val:female',
             'balanced_acc:val:female',
@@ -525,7 +524,9 @@ def main():
         is_best = val_loss < lowest_val_loss
         lowest_val_loss = min(val_loss, lowest_val_loss)
         
-        if epoch % args.log_interval == 0:
+        # if epoch % args.log_interval == 0:
+        # Save model when the loss is the lowest and not in the pre-determined log interval
+        if is_best:
             save_checkpoint(epoch, network, optimizer,
                       args.ckpt_dir, scheduler, is_best=is_best)
             # TODO: Save csv files here with the predictions and ground truth for the epochs with the lowest loss
@@ -560,12 +561,9 @@ def main():
         for _, metric in args.val_metrics.items():
             metric.reset_state()
             
-def balanced_acc_fcn(preds, gts, class_labels):
+def balanced_acc_fcn(preds, gts):
     balanced_acc = balanced_accuracy_score(preds.cpu().numpy(), gts.cpu().numpy())
     return balanced_acc
-
-def macro_acc_fcn(preds, gts, class_labels):
-    return balanced_acc_fcn(preds, gts, class_labels) * 100
 
 def tpr_score(y_true, y_pred):
     # Calculate True Positive Rate (TPR)
@@ -664,8 +662,8 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     male_gts_np = male_gts.cpu().numpy()
     female_gts_np = female_gts.cpu().numpy()
 
-    male_balanced_acc = balanced_acc_fcn(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
-    female_balanced_acc = balanced_acc_fcn(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
+    male_balanced_acc = balanced_acc_fcn(male_probs.argmax(-1), male_gts)
+    female_balanced_acc = balanced_acc_fcn(female_probs.argmax(-1), female_gts)
 
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
     
@@ -718,7 +716,7 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = balanced_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
+        balanced_acc = balanced_acc_fcn(output.argmax(-1), label)
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
@@ -745,7 +743,7 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = balanced_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
+        balanced_acc = balanced_acc_fcn(output.argmax(-1), label)
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
