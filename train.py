@@ -139,10 +139,11 @@ class Parser(argparse.ArgumentParser):
     def parse(self):
         args = self.parse_args()
         args.run_dir = os.path.join(args.models_dir,
-                      'method{method}_dataset{dataset}_arch{arch}_lr{lr}_bs{batch_size}_projdim{proj_dim}_nshot{nshot}_nway{nway}_wd{wd}_seed{seed}_class{train_class}'.format(
+                      'method{method}_dataset{dataset}_arch{arch}_pretrained{pretrained}_lr{lr}_bs{batch_size}_projdim{proj_dim}_nshot{nshot}_nway{nway}_wd{wd}_seed{seed}_class{train_class}'.format(
                         method=args.train_method,
                         dataset=args.dataset,
                         arch=args.arch,
+                        pretrained=args.pretrained,
                         lr=args.lr,
                         batch_size=args.batch_size,
                         proj_dim=args.proj_dim,
@@ -351,134 +352,9 @@ def main():
                           milestones=args.scheduler_milestones,
                           gamma=args.scheduler_gamma)
 
+    # Define tracked metrics during train and validation
+    list_of_metrics, list_of_val_metrics = metric.define_train_eval_metrics(args.train_method)
     
-    # Tracking metrics
-    list_of_metrics = [
-        'loss:train',
-        'balanced_acc:train',
-        'acc:train',
-    ]
-    if args.train_method == 'nwhead':
-        list_of_val_metrics = [
-            'loss:val:random',
-            'loss:val:full',
-            'loss:val:cluster',
-            'acc:val:random',
-            'acc:val:full',
-            'acc:val:cluster',
-            'acc:val:random:male',
-            'acc:val:full:male',
-            'acc:val:cluster:male',
-            'acc:val:random:female',
-            'acc:val:full:female',
-            'acc:val:cluster:female',
-            'balanced_acc:val:random',   # New metric for balanced accuracy
-            'balanced_acc:val:full',     # New metric for balanced accuracy
-            'balanced_acc:val:cluster',  # New metric for balanced accuracy
-            'balanced_acc:val:ensemble',   # New metric for balanced accuracy
-            'balanced_acc:val:knn',     # New metric for balanced accuracy
-            'balanced_acc:val:hnsw',  # New metric for balanced accuracy
-            'ece:val:random',
-            'ece:val:full',
-            'ece:val:cluster',
-            'loss:val:ensemble',
-            'loss:val:knn',
-            'loss:val:hnsw',
-            'acc:val:ensemble',
-            'acc:val:knn',
-            'acc:val:hnsw',
-            'balanced_acc:val:random:male',
-            'balanced_acc:val:full:male',
-            'balanced_acc:val:cluster:male',
-            'ece:val:random:male',
-            'ece:val:full:male',
-            'ece:val:cluster:male',
-            'balanced_acc:val:random:female',
-            'balanced_acc:val:full:female',
-            'balanced_acc:val:cluster:female',
-            'ece:val:random:female',
-            'ece:val:full:female',
-            'ece:val:cluster:female',
-            'acc:val:ensemble:male',
-            'acc:val:knn:male',
-            'acc:val:hnsw:male',
-            'balanced_acc:val:ensemble:male',
-            'balanced_acc:val:knn:male',
-            'balanced_acc:val:hnsw:male',
-            'acc:val:ensemble:female',
-            'acc:val:knn:female',
-            'acc:val:hnsw:female',
-            'balanced_acc:val:ensemble:female',
-            'balanced_acc:val:knn:female',
-            'balanced_acc:val:hnsw:female',
-            'f1:val:random',
-            'f1:val:full',
-            'f1:val:cluster',
-            'tpr:val:random',
-            'tpr:val:full',
-            'tpr:val:cluster',
-            'auc:val:random',
-            'auc:val:full',
-            'auc:val:cluster',
-            'acc:val:random:male', 'f1:val:random:male', 'tpr:val:random:male', 'auc:val:random:male',
-            'f1:val:full:male', 'tpr:val:full:male', 'auc:val:full:male',
-            'f1:val:cluster:male', 'tpr:val:cluster:male', 'auc:val:cluster:male',
-            'f1:val:random:female', 'tpr:val:random:female', 'auc:val:random:female',
-            'f1:val:full:female', 'tpr:val:full:female', 'auc:val:full:female',
-            'f1:val:cluster:female', 'tpr:val:cluster:female', 'auc:val:cluster:female',
-            'f1:val:knn:male',
-            'f1:val:hnsw:male',
-            'f1:val:ensemble:male',
-            'f1:val:ensemble',
-            'f1:val:knn',
-            'f1:val:hnsw',
-            'f1:val:ensemble:female',
-            'f1:val:knn:female',
-            'f1:val:hnsw:female',
-            'tpr:val:knn:male',
-            'tpr:val:hnsw:male',
-            'tpr:val:ensemble:male',
-            'tpr:val:ensemble',
-            'tpr:val:knn',
-            'tpr:val:hnsw',
-            'tpr:val:ensemble:female',
-            'tpr:val:knn:female',
-            'tpr:val:hnsw:female',
-            'auc:val:knn:male',
-            'auc:val:hnsw:male',
-            'auc:val:ensemble:male',
-            'auc:val:ensemble',
-            'auc:val:knn',
-            'auc:val:hnsw',
-            'auc:val:ensemble:female',
-            'auc:val:knn:female',
-            'auc:val:hnsw:female',
-
-        ]
-
-
-    else:
-        list_of_val_metrics = [
-            'loss:val',
-            'acc:val',
-            'ece:val',
-            'balanced_acc:val',
-            'acc:val:female',
-            'balanced_acc:val:female',
-            'balanced_acc:val:male',
-            'ece:val:female',
-            'acc:val:male',
-            'ece:val:male',
-            'f1:val',
-            'tpr:val',
-            'auc:val',
-            'f1:val:male',
-            'tpr:val:male',
-            'auc:val:male',
-            'f1:val:female',
-            'tpr:val:female',
-            'auc:val:female'
-        ] 
     args.metrics = {}
     args.metrics.update({key: Metric() for key in list_of_metrics})
     args.val_metrics = {}
@@ -559,10 +435,10 @@ def main():
             wandb.log({k: v.result() for k, v in args.val_metrics.items()})
 
         # Reset metrics
-        for _, metric in args.metrics.items():
-            metric.reset_state()
-        for _, metric in args.val_metrics.items():
-            metric.reset_state()
+        for _, metric_m in args.metrics.items():
+            metric_m.reset_state()
+        for _, metric_m in args.val_metrics.items():
+            metric_m.reset_state()
 
 
 def train_epoch(train_loader, network, criterion, optimizer, args):
@@ -619,7 +495,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             
             predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
 
-            args.val_metrics[f'f1:val:{mode}'].update_state(metric.f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
+            args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
             args.val_metrics[f'tpr:val:{mode}'].update_state(metric.tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
             args.val_metrics[f'auc:val:{mode}'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
 
