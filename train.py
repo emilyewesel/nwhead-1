@@ -11,6 +11,7 @@ import json
 import wandb
 import matplotlib.pyplot as plt
 from util.metric import Metric, ECELoss
+from sklearn.metrics import f1_score
 from util.utils import parse_bool, ParseKwargs, summary, save_checkpoint, initialize_wandb
 from util import metric
 from model import load_model
@@ -23,8 +24,6 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from PIL import Image
 import torch.nn.functional as F
-from sklearn.metrics import f1_score, roc_auc_score, roc_curve, auc, balanced_accuracy_score
-import math 
 from torch.optim import AdamW
 
 
@@ -107,6 +106,7 @@ class Parser(argparse.ArgumentParser):
         self.add_argument('--optimizer', type=str,
                   default='sgd', help='Weight decay') # options: sgd, adam, adamw
         self.add_argument('--arch', type=str, default='resnet18')
+        self.add_bool_arg('pretrained', True)
         self.add_argument(
           '--train_method', default='nwhead')
         self.add_bool_arg('freeze_featurizer', False)
@@ -282,22 +282,25 @@ def main():
     num_classes = train_dataset.num_classes
 
     # Get network
-    if args.arch == 'resnet18':
-        feat_dim = 512
+    if 'resnet' in args.arch:
+        if '18' in args.arch:
+            feat_dim = 512
+        elif '50' in args.arch:
+            feat_dim = 2048
         if args.dataset in ['cifar10', 'cifar100']:
             featurizer = load_model('CIFAR_ResNet18')
         elif args.dataset in ['chexpert']:
-            featurizer = load_model('resnet18', pretrained=True)
+            featurizer = load_model(args.arch, pretrained=args.pretrained)
         else:
-            featurizer = load_model('resnet18')
-    elif args.arch == 'densenet121':
+            featurizer = load_model(args.arch)
+    elif 'densenet' in args.arch:
         feat_dim = 1024
         if args.dataset in ['cifar10', 'cifar100']:
             featurizer = load_model('CIFAR_DenseNet121')
         elif args.dataset in ['chexpert']:
-            featurizer = load_model('densenet121', pretrained=True)
+            featurizer = load_model(args.arch, pretrained=args.pretrained)
         else:
-            featurizer = load_model('densenet121')
+            featurizer = load_model(args.arch)
     elif args.arch == 'dinov2_vits14':
         feat_dim = 384
         featurizer = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14')
@@ -560,22 +563,6 @@ def main():
             metric.reset_state()
         for _, metric in args.val_metrics.items():
             metric.reset_state()
-            
-def balanced_acc_fcn(preds, gts):
-    balanced_acc = balanced_accuracy_score(preds.cpu().numpy(), gts.cpu().numpy())
-    return balanced_acc
-
-def tpr_score(y_true, y_pred):
-    # Calculate True Positive Rate (TPR)
-    y_pred = y_pred > 0.5
-    tpr = sum((y_true == 1) & (y_pred == 1)) / sum(y_true == 1)
-    return tpr if not math.isnan(tpr) else 0.0
-
-def auc_score(y_true, y_pred_proba):
-    # Calculate Area Under the Curve (AUC)
-    fpr, tpr, _ = roc_curve(y_true, y_pred_proba)
-    auc_value = auc(fpr, tpr)
-    return auc_value if not math.isnan(auc_value) else 0.0
 
 
 def train_epoch(train_loader, network, criterion, optimizer, args):
@@ -617,8 +604,8 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
             
             args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
-            args.val_metrics['tpr:val'].update_state(tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
-            args.val_metrics['auc:val'].update_state(auc_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
+            args.val_metrics['tpr:val'].update_state(metric.tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
+            args.val_metrics['auc:val'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
 
             for j in range(len(gender)):
                 gender_str = 'male' if gender[j] == 0 else 'female'
@@ -632,9 +619,9 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             
             predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
 
-            args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
-            args.val_metrics[f'tpr:val:{mode}'].update_state(tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
-            args.val_metrics[f'auc:val:{mode}'].update_state(auc_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
+            args.val_metrics[f'f1:val:{mode}'].update_state(metric.f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
+            args.val_metrics[f'tpr:val:{mode}'].update_state(metric.tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
+            args.val_metrics[f'auc:val:{mode}'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
 
             # Separate metrics for males and females
             for j in range(len(gender)):
@@ -662,8 +649,8 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     male_gts_np = male_gts.cpu().numpy()
     female_gts_np = female_gts.cpu().numpy()
 
-    male_balanced_acc = balanced_acc_fcn(male_probs.argmax(-1), male_gts)
-    female_balanced_acc = balanced_acc_fcn(female_probs.argmax(-1), female_gts)
+    male_balanced_acc = metric.balanced_acc_fcn(male_probs.argmax(-1), male_gts)
+    female_balanced_acc = metric.balanced_acc_fcn(female_probs.argmax(-1), female_gts)
 
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
     
@@ -676,12 +663,13 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         # args.val_metrics[f'ece:val:female'].update_state(female_ece, 1)
         male_predictions = np.argmax(male_probs_np, axis=1)
         female_predictions = np.argmax(female_probs_np, axis=1)
+        
         args.val_metrics[f'f1:val:male'].update_state(f1_score(male_gts_np, male_predictions, average='weighted'), step_res['batch_size'])
-        args.val_metrics[f'tpr:val:male'].update_state(tpr_score(male_gts_np, male_predictions), step_res['batch_size'])
-        args.val_metrics[f'auc:val:male'].update_state(auc_score(male_gts_np, male_predictions), step_res['batch_size'])
+        args.val_metrics[f'tpr:val:male'].update_state(metric.tpr_score(male_gts_np, male_predictions), step_res['batch_size'])
+        args.val_metrics[f'auc:val:male'].update_state(metric.auc_score(male_gts_np, male_probs_np[:,1]), step_res['batch_size'])
         args.val_metrics[f'f1:val:female'].update_state(f1_score(female_gts_np, female_predictions, average='weighted'), step_res['batch_size'])
-        args.val_metrics[f'tpr:val:female'].update_state(tpr_score(female_gts_np, female_predictions), step_res['batch_size'])
-        args.val_metrics[f'auc:val:female'].update_state(auc_score(female_gts_np, female_predictions), step_res['batch_size'])
+        args.val_metrics[f'tpr:val:female'].update_state(metric.tpr_score(female_gts_np, female_predictions), step_res['batch_size'])
+        args.val_metrics[f'auc:val:female'].update_state(metric.auc_score(female_gts_np,  female_probs_np[:,1]), step_res['batch_size'])
         return args.val_metrics['acc:val'].result(), args.val_metrics['loss:val'].result()
     else:
         male_predictions = np.argmax(male_probs_np, axis=1)
@@ -693,11 +681,11 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'balanced_acc:val:{mode}:male'].update_state(male_balanced_acc*100, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:female'].update_state(female_balanced_acc * 100, 1)
         args.val_metrics[f'f1:val:{mode}:male'].update_state(f1_score(male_gts_np, male_predictions, average='weighted'), step_res['batch_size'])
-        args.val_metrics[f'tpr:val:{mode}:male'].update_state(tpr_score(male_gts_np, male_predictions), step_res['batch_size'])
-        args.val_metrics[f'auc:val:{mode}:male'].update_state(auc_score(male_gts_np, male_predictions), step_res['batch_size'])
+        args.val_metrics[f'tpr:val:{mode}:male'].update_state(metric.tpr_score(male_gts_np, male_predictions), step_res['batch_size'])
+        args.val_metrics[f'auc:val:{mode}:male'].update_state(metric.auc_score(male_gts_np,  male_probs_np[:,1]), step_res['batch_size'])
         args.val_metrics[f'f1:val:{mode}:female'].update_state(f1_score(female_gts_np, female_predictions, average='weighted'), step_res['batch_size'])
-        args.val_metrics[f'tpr:val:{mode}:female'].update_state(tpr_score(female_gts_np, female_predictions), step_res['batch_size'])
-        args.val_metrics[f'auc:val:{mode}:female'].update_state(auc_score(female_gts_np, female_predictions), step_res['batch_size'])
+        args.val_metrics[f'tpr:val:{mode}:female'].update_state(metric.tpr_score(female_gts_np, female_predictions), step_res['batch_size'])
+        args.val_metrics[f'auc:val:{mode}:female'].update_state(metric.auc_score(female_gts_np,  female_probs_np[:,1]), step_res['batch_size'])
 
 
 
@@ -716,7 +704,7 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = balanced_acc_fcn(output.argmax(-1), label)
+        balanced_acc = metric.balanced_acc_fcn(output.argmax(-1), label)
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
@@ -743,7 +731,7 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        balanced_acc = balanced_acc_fcn(output.argmax(-1), label)
+        balanced_acc = metric.balanced_acc_fcn(output.argmax(-1), label)
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \

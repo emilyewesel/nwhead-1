@@ -1,8 +1,9 @@
 import torch
 import numpy as np
-from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.metrics import accuracy_score, roc_auc_score, balanced_accuracy_score, precision_recall_fscore_support
 import torch.nn.functional as F
 from torch.nn.modules.loss import _WeightedLoss
+import math 
 
 def check_type(x):
     return x.cpu().detach().numpy() if isinstance(x, torch.Tensor) else x
@@ -19,6 +20,20 @@ def roc(pr, gt):
     pr = check_type(pr)
     gt = check_type(gt)
     return 100 * float(roc_auc_score(gt, pr))
+
+def balanced_acc_fcn(preds, gts):
+    balanced_acc = balanced_accuracy_score(gts.cpu().numpy(), preds.cpu().numpy())
+    return balanced_acc
+
+def tpr_score(y_true, y_pred):
+    # Calculate True Positive Rate (TPR)
+    precision, recall, fbeta_score, support = precision_recall_fscore_support(y_true, y_pred, average='binary', pos_label=1)
+    return recall
+
+def auc_score(y_true, y_pred_proba):
+    # Calculate Area Under the Curve (AUC)
+    auc_value = roc_auc_score(y_true, y_pred_proba)
+    return auc_value if not math.isnan(auc_value) else 0.0
 
 def support_influence(softmaxes, qlabels, sweights, slabels):
     '''
