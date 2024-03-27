@@ -3,7 +3,7 @@ import random
 import numpy as np
 import torch
 from torchvision import transforms, datasets
-import torchvision
+from data.chexpert import ChexpertDataset
 from tqdm import tqdm
 import argparse
 from pprint import pprint
@@ -23,81 +23,10 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from PIL import Image
 import torch.nn.functional as F
-from sklearn.metrics import f1_score, roc_auc_score, roc_curve, auc
+from sklearn.metrics import f1_score, roc_auc_score, roc_curve, auc, balanced_accuracy_score
 import math 
-from collections import Counter
+from torch.optim import AdamW
 
-
-
-
-class ChexpertDataset(Dataset):
-    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, mode = "Cardiomegaly"):
-        self.df = pd.read_csv(csv_file)
-        if mode == "Cardiomegaly":
-            self.df = self.df[self.df["Cardiomegaly"].isin([0, 1])]
-        elif mode == "Pneumothorax":
-            self.df = self.df[self.df["Pneumothorax"].isin([0, 1])]
-        if mode == "No Finding":
-            self.df["No Finding"].fillna(0, inplace=True)
-        self.df = self.df[self.df['Frontal/Lateral'] == 'Frontal']
-        
-        self.df.dropna(subset=["Sex"], inplace=True)
-        self.df = self.df[self.df.iloc[:, 1].isin(["Female", "Male"])]
-        if train and inject_underdiagnosis_bias:
-            female_indices = self.df[(self.df["Sex"] == "Female") & (self.df[mode] == 1)].index
-            num_female_samples = len(female_indices)
-            num_samples_to_convert = int(0.25 * num_female_samples)
-            indices_to_convert = np.random.choice(female_indices, num_samples_to_convert, replace=False)
-            self.df.loc[indices_to_convert, mode] = 0
-        self.base_path = train_base_path if train else test_base_path
-        self.transform = transform
-        self.targets = torch.tensor(self.df[mode].values, dtype=torch.long)  
-        self.genders = self.df.iloc[:, 1].dropna().map({'Female': 1, 'Male': 0}).astype(int).tolist()
-
-
-    def __len__(self):
-        return len(self.df)
-
-    def __getitem__(self, idx):
-        img_name = self.df.iloc[idx, 0].split('/', 1)[-1]
-        img_name = os.path.join(self.base_path, img_name)
-        image = Image.open(img_name).convert('RGB')  
-
-        label = self.targets[idx]
-        gender = self.genders[idx]
-
-        if self.transform:
-            image = self.transform(image)
-
-        return image, label, gender
-    def compute_class_weights(self):
-        class_counts = Counter(self.targets.numpy())
-        total_samples = sum(class_counts.values())
-        class_weights = [total_samples / (class_counts[i] * len(class_counts)) for i in range(len(class_counts))]
-        sum_weights = sum(class_weights)
-        class_weights = [weight / sum_weights for weight in class_weights]
-        return torch.tensor(class_weights)
-    def compute_class_weights2(self):
-        class_counts_male = Counter()
-        class_counts_female = Counter()
-
-        for label, gender in zip(self.targets.numpy(), self.genders):
-            if gender == 0:  # Male
-                class_counts_male[label] += 1
-            else:  # Female
-                class_counts_female[label] += 1
-
-        return {
-            'male': {
-                'positive': class_counts_male[1],
-                'negative': class_counts_male[0]
-            },
-            'female': {
-                'positive': class_counts_female[1],
-                'negative': class_counts_female[0]
-            }
-        }
-import numpy as np
 
 class EarlyStopping:
     def __init__(self, patience=5, mode='min', delta=0):
@@ -172,15 +101,16 @@ class Parser(argparse.ArgumentParser):
         self.add_argument('--scheduler_gamma', type=float,
                   default=0.1, help='Multiplicative factor for scheduler')
         self.add_argument('--seed', type=int,
-                  default=0, help='Seed')
+                  default=1964, help='Seed')
         self.add_argument('--weight_decay', type=float,
                   default=1e-4, help='Weight decay')
+        self.add_argument('--optimizer', type=str,
+                  default='sgd', help='Weight decay') # options: sgd, adam, adamw
         self.add_argument('--arch', type=str, default='resnet18')
         self.add_argument(
           '--train_method', default='nwhead')
         self.add_bool_arg('freeze_featurizer', False)
-        self.add_argument('--mode', type=str,
-                  default="Cardiomegaly")
+        self.add_argument('--train_class', type=str, default="Edema")
 
         # NW head parameters
         self.add_argument('--kernel_type', type=str, default='euclidean',
@@ -209,7 +139,7 @@ class Parser(argparse.ArgumentParser):
     def parse(self):
         args = self.parse_args()
         args.run_dir = os.path.join(args.models_dir,
-                      'method{method}_dataset{dataset}_arch{arch}_lr{lr}_bs{batch_size}_projdim{proj_dim}_nshot{nshot}_nway{nway}_wd{wd}_seed{seed}'.format(
+                      'method{method}_dataset{dataset}_arch{arch}_lr{lr}_bs{batch_size}_projdim{proj_dim}_nshot{nshot}_nway{nway}_wd{wd}_seed{seed}_class{train_class}'.format(
                         method=args.train_method,
                         dataset=args.dataset,
                         arch=args.arch,
@@ -219,7 +149,8 @@ class Parser(argparse.ArgumentParser):
                         nshot=args.n_shot,
                         nway=args.n_way,
                         wd=args.weight_decay,
-                        seed=args.seed
+                        seed=args.seed,
+                        train_class=args.train_class
                       ))
         args.ckpt_dir = os.path.join(args.run_dir, 'checkpoints')
         if not os.path.exists(args.run_dir):
@@ -241,6 +172,7 @@ def main():
     args = Parser().parse()
 
     # Set random seed
+    # If seed is 0, the experiments are random, otherwise the seed is set
     seed = args.seed
     if seed > 0:
         random.seed(seed)
@@ -375,7 +307,6 @@ def main():
     if args.freeze_featurizer:
         for param in featurizer.parameters():
             param.requires_grad = False
-    # args.train_method = 'fchead'
     if args.train_method == 'fchead':
         network = FCNet(featurizer, 
                         feat_dim, 
@@ -397,20 +328,21 @@ def main():
     network.to(args.device)
 
     # Set loss, optimizer, and scheduler
-    # weight = torch.tensor()
     criterion = torch.nn.NLLLoss(weight = class_weights.to(args.device))
-    optimizer = torch.optim.SGD(network.parameters(), 
+    if args.optimizer == 'sgd':
+        optimizer = torch.optim.SGD(network.parameters(), 
                                 lr=args.lr, 
                                 momentum=0.9, 
                                 weight_decay=args.weight_decay, 
                                 nesterov=True)
-    # optimizer = torch.optim.Adam(network.parameters(), 
-    #                          lr=args.lr, 
-    #                          weight_decay=args.weight_decay)
-    # from torch.optim import AdamW
-    # optimizer = AdamW(network.parameters(),
-    #               lr=args.lr,
-    #               weight_decay=args.weight_decay)
+    elif args.optimizer == 'adam':
+        optimizer = torch.optim.Adam(network.parameters(), 
+                             lr=args.lr, 
+                             weight_decay=args.weight_decay)
+    elif args.optimizer == 'adamw':
+        optimizer = AdamW(network.parameters(),
+                  lr=args.lr,
+                  weight_decay=args.weight_decay)
 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
                           milestones=args.scheduler_milestones,
@@ -420,8 +352,7 @@ def main():
     # Tracking metrics
     list_of_metrics = [
         'loss:train',
-        # 'balanced_acc:train',
-        # 'macro_acc:train',
+        'balanced_acc:train',
         'acc:train',
     ]
     if args.train_method == 'nwhead':
@@ -441,9 +372,9 @@ def main():
             'balanced_acc:val:random',   # New metric for balanced accuracy
             'balanced_acc:val:full',     # New metric for balanced accuracy
             'balanced_acc:val:cluster',  # New metric for balanced accuracy
-            # 'macro_acc:val:random',      # New metric for macro accuracy
-            # 'macro_acc:val:full',        # New metric for macro accuracy
-            # 'macro_acc:val:cluster',     # New metric for macro accuracy
+            'balanced_acc:val:ensemble',   # New metric for balanced accuracy
+            'balanced_acc:val:knn',     # New metric for balanced accuracy
+            'balanced_acc:val:hnsw',  # New metric for balanced accuracy
             'ece:val:random',
             'ece:val:full',
             'ece:val:cluster',
@@ -456,18 +387,12 @@ def main():
             'balanced_acc:val:random:male',
             'balanced_acc:val:full:male',
             'balanced_acc:val:cluster:male',
-            # 'macro_acc:val:random:male',   # New metric for male macro accuracy
-            # 'macro_acc:val:full:male',     # New metric for male macro accuracy
-            # 'macro_acc:val:cluster:male',  # New metric for male macro accuracy
             'ece:val:random:male',
             'ece:val:full:male',
             'ece:val:cluster:male',
             'balanced_acc:val:random:female',
             'balanced_acc:val:full:female',
             'balanced_acc:val:cluster:female',
-            # 'macro_acc:val:random:female',   # New metric for female macro accuracy
-            # 'macro_acc:val:full:female',     # New metric for female macro accuracy
-            # 'macro_acc:val:cluster:female',  # New metric for female macro accuracy
             'ece:val:random:female',
             'ece:val:full:female',
             'ece:val:cluster:female',
@@ -477,18 +402,12 @@ def main():
             'balanced_acc:val:ensemble:male',
             'balanced_acc:val:knn:male',
             'balanced_acc:val:hnsw:male',
-            # 'macro_acc:val:ensemble:male',
-            # 'macro_acc:val:knn:male',
-            # 'macro_acc:val:hnsw:male',
             'acc:val:ensemble:female',
             'acc:val:knn:female',
             'acc:val:hnsw:female',
             'balanced_acc:val:ensemble:female',
             'balanced_acc:val:knn:female',
             'balanced_acc:val:hnsw:female',
-            # 'macro_acc:val:ensemble:female',
-            # 'macro_acc:val:knn:female',
-            # 'macro_acc:val:hnsw:female',
             'f1:val:random',
             'f1:val:full',
             'f1:val:cluster',
@@ -540,12 +459,12 @@ def main():
             'loss:val',
             'acc:val',
             'ece:val',
-            # 'loss:val:female',
+            'balanced_acc:train',
+            'balanced_acc:val',
             'acc:val:female',
             'balanced_acc:val:female',
             'balanced_acc:val:male',
             'ece:val:female',
-            # 'loss:val:male',
             'acc:val:male',
             'ece:val:male',
             'f1:val',
@@ -570,17 +489,17 @@ def main():
     # Training loop
     start_epoch = 1
     best_acc1 = 0
+    lowest_val_loss = np.Inf
     early_stopping = EarlyStopping(patience=5, mode='min')
     for epoch in range(start_epoch, args.num_epochs+1):
         print('Epoch:', epoch)
         if args.train_method == 'nwhead':
-            # print("WRONG!! WRONG!! epoch")
             network.eval()
             network.precompute()
             print('Evaluating on random mode...')
             eval_epoch(val_loader, network, criterion, optimizer, args, mode='random')
             print('Evaluating on full mode...')
-            acc1 = eval_epoch(val_loader, network, criterion, optimizer, args, mode='full')
+            acc1, val_loss = eval_epoch(val_loader, network, criterion, optimizer, args, mode='full')
             print('Evaluating on cluster mode...')
             eval_epoch(val_loader, network, criterion, optimizer, args, mode='cluster')
             print('Evaluating on ensemble mode...')
@@ -591,19 +510,25 @@ def main():
             eval_epoch(val_loader, network, criterion, optimizer, args, mode='hnsw')
 
         else:
-            acc1 = eval_epoch(val_loader, network, criterion, optimizer, args)
+            acc1, val_loss = eval_epoch(val_loader, network, criterion, optimizer, args)
 
         print('Training...')
         train_epoch(train_loader, network, criterion, optimizer, args)
         scheduler.step()
 
-        # Remember best acc and save checkpoint
-        is_best = acc1 > best_acc1
-        best_acc1 = max(acc1, best_acc1)
-
+        # Save best acc and save checkpoint
+        # This criterion saves the models with the highest val accuracy
+        # is_best = acc1 > best_acc1
+        # best_acc1 = max(acc1, best_acc1)
+        
+        # This criterion saves the models with the lowest validation loss
+        is_best = val_loss < lowest_val_loss
+        lowest_val_loss = min(val_loss, lowest_val_loss)
+        
         if epoch % args.log_interval == 0:
             save_checkpoint(epoch, network, optimizer,
                       args.ckpt_dir, scheduler, is_best=is_best)
+            # TODO: Save csv files here with the predictions and ground truth for the epochs with the lowest loss
         print("Train loss={:.6f}, train acc={:.6f}, lr={:.6f}".format(
             args.metrics['loss:train'].result(), args.metrics['acc:train'].result(), scheduler.get_last_lr()[0]))
         if args.train_method == 'fchead':
@@ -634,23 +559,16 @@ def main():
             metric.reset_state()
         for _, metric in args.val_metrics.items():
             metric.reset_state()
+            
 def balanced_acc_fcn(preds, gts, class_labels):
-    balanced_acc_per_class = []
-    for label in class_labels:
-        class_indices = (gts == label).nonzero()
-        class_preds = preds[class_indices]
-        class_gts = gts[class_indices]
-        class_acc = metric.acc(class_preds, class_gts)
-        balanced_acc_per_class.append(class_acc)
-    balanced_acc = torch.tensor(balanced_acc_per_class).mean()
-    return balanced_acc.item()
+    balanced_acc = balanced_accuracy_score(preds.cpu().numpy(), gts.cpu().numpy())
+    return balanced_acc
 
 def macro_acc_fcn(preds, gts, class_labels):
     return balanced_acc_fcn(preds, gts, class_labels) * 100
+
 def tpr_score(y_true, y_pred):
     # Calculate True Positive Rate (TPR)
-    # print("y_true", y_true)
-    # print("y_pred", y_pred)
     y_pred = y_pred > 0.5
     tpr = sum((y_true == 1) & (y_pred == 1)) / sum(y_true == 1)
     return tpr if not math.isnan(tpr) else 0.0
@@ -674,8 +592,7 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=True)
         args.metrics['loss:train'].update_state(step_res['loss'], step_res['batch_size'])
         args.metrics['acc:train'].update_state(step_res['acc'], step_res['batch_size'])
-        # args.metrics['balanced_acc:train'].update_state(step_res['balanced_acc'], step_res['batch_size'])
-        # args.metrics['macro_acc:train'].update_state(step_res['macro_acc'], step_res['batch_size'])
+        args.metrics['balanced_acc:train'].update_state(step_res['balanced_acc'], step_res['batch_size'])
         if i == args.num_steps_per_epoch:
             break
 
@@ -697,7 +614,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             step_res = fc_step(batch, network, criterion, optimizer, args, is_train=False)
             args.val_metrics['loss:val'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics['acc:val'].update_state(step_res['acc'], step_res['batch_size'])
+            args.val_metrics['balanced_acc:val'].update_state(step_res['balanced_acc'], step_res['batch_size'])
+            
             predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
+            
             args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
             args.val_metrics['tpr:val'].update_state(tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
             args.val_metrics['auc:val'].update_state(auc_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
@@ -710,7 +630,8 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=False, mode=mode)
             args.val_metrics[f'loss:val:{mode}'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics[f'acc:val:{mode}'].update_state(step_res['acc'], step_res['batch_size'])
-            # print("f1 gt", step_res['gt'].cpu().numpy())
+            args.val_metrics[f'balanced_acc:val:{mode}'].update_state(step_res['balanced_acc'], step_res['batch_size'])
+            
             predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
 
             args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
@@ -745,8 +666,6 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
 
     male_balanced_acc = balanced_acc_fcn(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
     female_balanced_acc = balanced_acc_fcn(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
-    male_macro_acc = macro_acc_fcn(male_probs.argmax(-1), male_gts, class_labels=[0, 1])
-    female_macro_acc = macro_acc_fcn(female_probs.argmax(-1), female_gts, class_labels=[0, 1])
 
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
     
@@ -765,7 +684,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'f1:val:female'].update_state(f1_score(female_gts_np, female_predictions, average='weighted'), step_res['batch_size'])
         args.val_metrics[f'tpr:val:female'].update_state(tpr_score(female_gts_np, female_predictions), step_res['batch_size'])
         args.val_metrics[f'auc:val:female'].update_state(auc_score(female_gts_np, female_predictions), step_res['batch_size'])
-        return args.val_metrics['acc:val'].result()
+        return args.val_metrics['acc:val'].result(), args.val_metrics['loss:val'].result()
     else:
         male_predictions = np.argmax(male_probs_np, axis=1)
         female_predictions = np.argmax(female_probs_np, axis=1)
@@ -775,8 +694,6 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         # args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:male'].update_state(male_balanced_acc*100, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:female'].update_state(female_balanced_acc * 100, 1)
-        # args.val_metrics[f'macro_acc:val:{mode}:male'].update_state(male_macro_acc*100, 1)
-        # args.val_metrics[f'macro_acc:val:{mode}:female'].update_state(female_macro_acc * 100, 1)
         args.val_metrics[f'f1:val:{mode}:male'].update_state(f1_score(male_gts_np, male_predictions, average='weighted'), step_res['batch_size'])
         args.val_metrics[f'tpr:val:{mode}:male'].update_state(tpr_score(male_gts_np, male_predictions), step_res['batch_size'])
         args.val_metrics[f'auc:val:{mode}:male'].update_state(auc_score(male_gts_np, male_predictions), step_res['batch_size'])
@@ -786,7 +703,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
 
 
 
-        return args.val_metrics[f'acc:val:{mode}'].result()
+        return args.val_metrics[f'acc:val:{mode}'].result(), args.val_metrics[f'loss:val:{mode}'].result()
 
 def fc_step(batch, network, criterion, optimizer, args, is_train=True):
     '''Train/val for one step.'''
@@ -801,13 +718,11 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        # balanced_acc = balanced_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
-        # macro_acc = macro_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
+        balanced_acc = balanced_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
-            # 'balanced_acc': balanced_acc * 100, \
-            # 'macro_acc': macro_acc * 100, \
+            'balanced_acc': balanced_acc * 100, \
             'batch_size': len(img), \
             'prob': output.exp(), \
             'gt': label}
@@ -830,13 +745,11 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
             loss.backward()
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
-        # balanced_acc = balanced_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
-        # macro_acc = macro_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
+        balanced_acc = balanced_acc_fcn(output.argmax(-1), label, class_labels=[0, 1])
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
-            # 'balanced_acc': balanced_acc * 100, \
-            # 'macro_acc': macro_acc * 100, \
+            'balanced_acc': balanced_acc * 100, \
             'batch_size': len(img), \
             'prob': output.exp(), \
             'gt': label}

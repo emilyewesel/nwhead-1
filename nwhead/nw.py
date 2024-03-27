@@ -131,7 +131,7 @@ class NWNet(nn.Module):
             One of ['random', 'full', 'cluster', 'ensemble', 'knn', 'hnsw']
         '''
         qfeat = self.featurizer(x)
-        print(qfeat)
+        # print(qfeat)
         sfeat, sy = self.support_eval.get_support(mode, x=qfeat)
 
         if self.debug_mode:
@@ -297,8 +297,8 @@ class NWHead(nn.Module):
             x = self.project(x)
             sx = self.project(sx)
 
-        print(f'X is contiguous: {x.is_contiguous()}')
-        print(f'SX is contiguous: {sx.is_contiguous()}')
+        # print(f'X is contiguous: {x.is_contiguous()}')
+        # print(f'SX is contiguous: {sx.is_contiguous()}')
         scores = self.kernel(x, sx)
 
         probs = F.softmax(scores, dim=-1)
