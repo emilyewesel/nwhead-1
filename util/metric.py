@@ -91,7 +91,7 @@ class ECELoss(torch.nn.Module):
     """
     Calculates the Expected Calibration Error of a model.
     (This isn't necessary for temperature scaling, just a cool metric).
-    The input to this loss is the logits of a model, NOT the softmax scores.
+    The input to this loss is the softmax scores.
     This divides the confidence outputs into equally-sized interval bins.
     In each bin, we compute the confidence gap:
     bin_gap = | avg_confidence_in_bin - accuracy_in_bin |
@@ -283,4 +283,5 @@ def define_train_eval_metrics(train_method):
             'tpr:val:female',
             'auc:val:female'
         ]
-        return list_of_metrics, list_of_val_metrics
+    
+    return list_of_metrics, list_of_val_metrics

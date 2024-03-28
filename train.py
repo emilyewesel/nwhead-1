@@ -12,7 +12,7 @@ import wandb
 import matplotlib.pyplot as plt
 from util.metric import Metric, ECELoss
 from sklearn.metrics import f1_score
-from util.utils import parse_bool, ParseKwargs, summary, save_checkpoint, initialize_wandb
+from util.utils import parse_bool, ParseKwargs, summary, save_checkpoint, initialize_wandb, EarlyStopping
 from util import metric
 from model import load_model
 from nwhead.nw import NWNet
@@ -25,46 +25,6 @@ from torch.utils.data import DataLoader
 from PIL import Image
 import torch.nn.functional as F
 from torch.optim import AdamW
-
-
-class EarlyStopping:
-    def __init__(self, patience=5, mode='min', delta=0):
-        self.patience = patience
-        self.mode = mode
-        self.delta = delta
-        self.counter = 0
-        self.best_score = None
-        self.early_stop = False
-        if self.mode == 'min':
-            self.best_score = np.Inf
-        else:
-            self.best_score = -np.Inf
-
-    def __call__(self, val_loss):
-        if self.mode == 'min':
-            score = -val_loss
-        else:
-            score = val_loss
-
-        if self.best_score is None:
-            self.best_score = score
-            self.save_checkpoint(val_loss)
-        elif score < self.best_score + self.delta:
-            self.counter += 1
-            if self.counter >= self.patience:
-                self.early_stop = True
-        else:
-            self.best_score = score
-            self.save_checkpoint(val_loss)
-            self.counter = 0
-
-    def save_checkpoint(self, val_loss):
-        if self.mode == 'min':
-            print(f'Validation loss decreased ({self.best_score:.6f} --> {val_loss:.6f}). Saving model...')
-        else:
-            print(f'Validation loss increased ({self.best_score:.6f} --> {val_loss:.6f}). Saving model...')
-
-
 
 
 class Parser(argparse.ArgumentParser):
@@ -205,7 +165,7 @@ def main():
                   transforms.Resize((224, 224)),  # Resize to 224x224
                   transforms.RandomRotation(20),  # rotation within the range [-20, 20] degrees
                   transforms.RandomResizedCrop(224, scale=(0.8, 1.0)),  # random crop with scaling between 80% and 100%
-                  transforms.ColorJitter(brightness=0.1, contrast=0.1),transforms.ToTensor(),  # Convert the image to a tenso
+                  transforms.ColorJitter(brightness=0.1, contrast=0.1),transforms.ToTensor(),  # Convert the image to a tensor
                   transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
                 ])
         transform_test = transforms.Compose([
@@ -477,8 +437,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             args.val_metrics['acc:val'].update_state(step_res['acc'], step_res['batch_size'])
             args.val_metrics['balanced_acc:val'].update_state(step_res['balanced_acc'], step_res['batch_size'])
             
+            overall_ece = (ECELoss()(step_res['prob'], label) * 100).item()
             predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
             
+            args.val_metrics['ece:val'].update_state(overall_ece, 1)
             args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
             args.val_metrics['tpr:val'].update_state(metric.tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
             args.val_metrics['auc:val'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
@@ -493,8 +455,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             args.val_metrics[f'acc:val:{mode}'].update_state(step_res['acc'], step_res['batch_size'])
             args.val_metrics[f'balanced_acc:val:{mode}'].update_state(step_res['balanced_acc'], step_res['batch_size'])
             
+            overall_ece = (ECELoss()(step_res['prob'], label) * 100).item()
             predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
 
+            args.val_metrics['ece:val:{mode}'].update_state(overall_ece, 1)
             args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
             args.val_metrics[f'tpr:val:{mode}'].update_state(metric.tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
             args.val_metrics[f'auc:val:{mode}'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
@@ -532,11 +496,11 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     
     if args.train_method == 'fchead':
         args.val_metrics[f'acc:val:male'].update_state(male_acc * 100, 1)
-        # args.val_metrics[f'ece:val:male'].update_state(male_ece, 1)
+        args.val_metrics[f'ece:val:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:female'].update_state(female_acc * 100, 1)
         args.val_metrics[f'balanced_acc:val:male'].update_state(male_balanced_acc*100, 1)
         args.val_metrics[f'balanced_acc:val:female'].update_state(female_balanced_acc * 100, 1)
-        # args.val_metrics[f'ece:val:female'].update_state(female_ece, 1)
+        args.val_metrics[f'ece:val:female'].update_state(female_ece, 1)
         male_predictions = np.argmax(male_probs_np, axis=1)
         female_predictions = np.argmax(female_probs_np, axis=1)
         
@@ -551,9 +515,9 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         male_predictions = np.argmax(male_probs_np, axis=1)
         female_predictions = np.argmax(female_probs_np, axis=1)
         args.val_metrics[f'acc:val:{mode}:male'].update_state(male_acc * 100, 1)
-        # args.val_metrics[f'ece:val:{mode}:male'].update_state(male_ece, 1)
+        args.val_metrics[f'ece:val:{mode}:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:{mode}:female'].update_state(female_acc * 100, 1)
-        # args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
+        args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:male'].update_state(male_balanced_acc*100, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:female'].update_state(female_balanced_acc * 100, 1)
         args.val_metrics[f'f1:val:{mode}:male'].update_state(f1_score(male_gts_np, male_predictions, average='weighted'), step_res['batch_size'])
@@ -562,8 +526,6 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'f1:val:{mode}:female'].update_state(f1_score(female_gts_np, female_predictions, average='weighted'), step_res['batch_size'])
         args.val_metrics[f'tpr:val:{mode}:female'].update_state(metric.tpr_score(female_gts_np, female_predictions), step_res['batch_size'])
         args.val_metrics[f'auc:val:{mode}:female'].update_state(metric.auc_score(female_gts_np,  female_probs_np[:,1]), step_res['batch_size'])
-
-
 
         return args.val_metrics[f'acc:val:{mode}'].result(), args.val_metrics[f'loss:val:{mode}'].result()
 
