@@ -9,14 +9,12 @@ from torch.utils.data import Dataset
 class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Edema"):
         self.df = pd.read_csv(csv_file)
-        if train_class == "Cardiomegaly":
-            self.df = self.df[self.df["Cardiomegaly"].isin([0, 1])]
-        elif train_class == "Pneumothorax":
-            self.df = self.df[self.df["Pneumothorax"].isin([0, 1])]
-        elif train_class == "Edema":
-            self.df = self.df[self.df["Edema"].isin([0, 1])]
+
         if train_class == "No Finding":
             self.df["No Finding"].fillna(0, inplace=True)
+        else:
+            self.df = self.df[self.df[train_class].isin([0, 1])]
+        
         self.df = self.df[self.df['Frontal/Lateral'] == 'Frontal']
         
         self.df.dropna(subset=["Sex"], inplace=True)

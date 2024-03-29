@@ -32,8 +32,12 @@ def tpr_score(y_true, y_pred):
 
 def auc_score(y_true, y_pred_proba):
     # Calculate Area Under the Curve (AUC)
-    auc_value = roc_auc_score(y_true, y_pred_proba)
-    return auc_value if not math.isnan(auc_value) else 0.0
+    try:
+        auc_value = roc_auc_score(y_true, y_pred_proba)
+        return auc_value
+    # If y_true contains only one class AUC is not defined (relevant for unbalanced classes like Fracture)
+    except ValueError:
+        return 0.0
 
 def support_influence(softmaxes, qlabels, sweights, slabels):
     '''
