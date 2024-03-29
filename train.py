@@ -114,10 +114,13 @@ class Parser(argparse.ArgumentParser):
                         train_class=args.train_class
                       ))
         args.ckpt_dir = os.path.join(args.run_dir, 'checkpoints')
+        args.output_csv_dir = os.path.join(args.run_dir, 'output_csv') 
         if not os.path.exists(args.run_dir):
             os.makedirs(args.run_dir)
         if not os.path.exists(args.ckpt_dir):
             os.makedirs(args.ckpt_dir)
+        if not os.path.exists(args.output_csv_dir):
+            os.makedirs(args.output_csv_dir)
 
         # Print args and save to file
         print('Arguments:')
@@ -326,7 +329,7 @@ def main():
 
     # Training loop
     start_epoch = 1
-    best_acc1 = 0
+    best_bacc1 = 0
     lowest_val_loss = np.Inf
     early_stopping = EarlyStopping(patience=5, mode='min')
     for epoch in range(start_epoch, args.num_epochs+1):
@@ -337,7 +340,7 @@ def main():
             print('Evaluating on random mode...')
             eval_epoch(val_loader, network, criterion, optimizer, args, mode='random')
             print('Evaluating on full mode...')
-            acc1, val_loss = eval_epoch(val_loader, network, criterion, optimizer, args, mode='full')
+            bacc1, val_loss, csv_output_dict = eval_epoch(val_loader, network, criterion, optimizer, args, mode='full')
             print('Evaluating on cluster mode...')
             eval_epoch(val_loader, network, criterion, optimizer, args, mode='cluster')
             print('Evaluating on ensemble mode...')
@@ -348,16 +351,27 @@ def main():
             eval_epoch(val_loader, network, criterion, optimizer, args, mode='hnsw')
 
         else:
-            acc1, val_loss = eval_epoch(val_loader, network, criterion, optimizer, args)
+            bacc1, val_loss, csv_output_dict = eval_epoch(val_loader, network, criterion, optimizer, args)
 
+        # DataFrame construction
+        csv_output_df = pd.DataFrame(csv_output_dict)
+
+        # Step 4: Write to CSV
+        output_csv_path = args.output_csv_dir + f'/model_output_epoch_{epoch-1}.csv'
+        csv_output_df.to_csv(output_csv_path, index=False)
+        
+        # Save checkpoint based on best acc
+        # This criterion saves the models with the highest val accuracy
+        # Since the model evaluated above corresponds to the previous training epoch, we save this model as epoch-1, before it moves on to be trained for epoch
+        bacc_is_best = bacc1 > best_bacc1
+        best_bacc1 = max(bacc1, best_bacc1)
+        if bacc_is_best:
+            save_checkpoint(epoch-1, network, optimizer,
+                      args.ckpt_dir, scheduler, is_best=False) # Save global "best" model based on loss and not on BACC
+        
         print('Training...')
         train_epoch(train_loader, network, criterion, optimizer, args)
         scheduler.step()
-
-        # Save best acc and save checkpoint
-        # This criterion saves the models with the highest val accuracy
-        # is_best = acc1 > best_acc1
-        # best_acc1 = max(acc1, best_acc1)
         
         # This criterion saves the models with the lowest validation loss
         is_best = val_loss < lowest_val_loss
@@ -368,7 +382,7 @@ def main():
         if is_best:
             save_checkpoint(epoch, network, optimizer,
                       args.ckpt_dir, scheduler, is_best=is_best)
-            # TODO: Save csv files here with the predictions and ground truth for the epochs with the lowest loss
+    
         print("Train loss={:.6f}, train acc={:.6f}, lr={:.6f}".format(
             args.metrics['loss:train'].result(), args.metrics['acc:train'].result(), scheduler.get_last_lr()[0]))
         if args.train_method == 'fchead':
@@ -423,10 +437,12 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
 
     probs = {'male': [], 'female': []}
     gts = {'male': [], 'female': []}
+    # I want to create a dataframe to store the predictions, gt, scores for posthoc analysis
+    csv_output_dict = [] 
 
     for i, batch in tqdm(enumerate(val_loader), 
         total=min(len(val_loader), args.num_val_steps_per_epoch)):
-        img, label, gender = batch
+        img, label, gender, id = batch
         img = img.float().to(args.device)
         label = label.to(args.device)
         gender = gender.to(args.device)
@@ -439,6 +455,18 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             
             overall_ece = (ECELoss()(step_res['prob'], label) * 100).item()
             predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
+            
+            # Collect data; ensure they are detached and moved to CPU if necessary
+            for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].cpu().numpy(), gender.cpu().numpy(), id):
+                
+                csv_output_dict.append({
+                    'Ground Truth': label.item(),
+                    'Prediction': pred,
+                    'Probability Class 0': prob[0],
+                    'Probability Class 1': prob[1],
+                    'Gender': gend,
+                    'Path': img_id
+                })
             
             args.val_metrics['ece:val'].update_state(overall_ece, 1)
             args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
@@ -457,8 +485,21 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             
             overall_ece = (ECELoss()(step_res['prob'], label) * 100).item()
             predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
-
-            args.val_metrics['ece:val:{mode}'].update_state(overall_ece, 1)
+            
+            if mode == 'full':
+                # Collect data; ensure they are detached and moved to CPU if necessary
+                for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].cpu().numpy(), gender.cpu().numpy(), id):
+                    
+                    csv_output_dict.append({
+                        'Ground Truth': label.item(),
+                        'Prediction': pred,
+                        'Probability Class 0': prob[0],
+                        'Probability Class 1': prob[1],
+                        'Gender': gend,
+                        'Path': img_id
+                    })
+                
+            args.val_metrics[f'ece:val:{mode}'].update_state(overall_ece, 1)
             args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
             args.val_metrics[f'tpr:val:{mode}'].update_state(metric.tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
             args.val_metrics[f'auc:val:{mode}'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
@@ -510,7 +551,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'f1:val:female'].update_state(f1_score(female_gts_np, female_predictions, average='weighted'), step_res['batch_size'])
         args.val_metrics[f'tpr:val:female'].update_state(metric.tpr_score(female_gts_np, female_predictions), step_res['batch_size'])
         args.val_metrics[f'auc:val:female'].update_state(metric.auc_score(female_gts_np,  female_probs_np[:,1]), step_res['batch_size'])
-        return args.val_metrics['acc:val'].result(), args.val_metrics['loss:val'].result()
+        return args.val_metrics['balanced_acc:val'].result(), args.val_metrics['loss:val'].result(), csv_output_dict
     else:
         male_predictions = np.argmax(male_probs_np, axis=1)
         female_predictions = np.argmax(female_probs_np, axis=1)
@@ -527,11 +568,11 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'tpr:val:{mode}:female'].update_state(metric.tpr_score(female_gts_np, female_predictions), step_res['batch_size'])
         args.val_metrics[f'auc:val:{mode}:female'].update_state(metric.auc_score(female_gts_np,  female_probs_np[:,1]), step_res['batch_size'])
 
-        return args.val_metrics[f'acc:val:{mode}'].result(), args.val_metrics[f'loss:val:{mode}'].result()
+        return args.val_metrics[f'balanced_acc:val:{mode}'].result(), args.val_metrics[f'loss:val:{mode}'].result(), csv_output_dict
 
 def fc_step(batch, network, criterion, optimizer, args, is_train=True):
     '''Train/val for one step.'''
-    img, label, gender = batch
+    img, label, gender, id = batch
     img = img.float().to(args.device)
     label = label.to(args.device)
     optimizer.zero_grad()
@@ -554,7 +595,7 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
 
 def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='random'):
     '''Train/val for one step.'''
-    img, label, gender = batch
+    img, label, gender, id = batch
     img = img.float().to(args.device)
     label = label.to(args.device)
     gender = gender.to(args.device)

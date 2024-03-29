@@ -47,7 +47,8 @@ class ChexpertDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        return image, label, gender
+        return image, label, gender, img_name
+    
     def compute_class_weights(self):
         class_counts = Counter(self.targets.numpy())
         total_samples = sum(class_counts.values())
