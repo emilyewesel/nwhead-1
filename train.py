@@ -332,53 +332,38 @@ def main():
     best_bacc1 = 0
     lowest_val_loss = np.Inf
     early_stopping = EarlyStopping(patience=5, mode='min')
+    
+    # Run evaluation one time to make sure everything runs
+    run_evaluation(val_loader, network, criterion, optimizer, args)
+    
     for epoch in range(start_epoch, args.num_epochs+1):
         print('Epoch:', epoch)
-        if args.train_method == 'nwhead':
-            network.eval()
-            network.precompute()
-            print('Evaluating on random mode...')
-            eval_epoch(val_loader, network, criterion, optimizer, args, mode='random')
-            print('Evaluating on full mode...')
-            bacc1, val_loss, csv_output_dict = eval_epoch(val_loader, network, criterion, optimizer, args, mode='full')
-            print('Evaluating on cluster mode...')
-            eval_epoch(val_loader, network, criterion, optimizer, args, mode='cluster')
-            print('Evaluating on ensemble mode...')
-            eval_epoch(val_loader, network, criterion, optimizer, args, mode='ensemble')
-            print('Evaluating on knn mode...')
-            eval_epoch(val_loader, network, criterion, optimizer, args, mode='knn')
-            print('Evaluating on hnsw mode...')
-            eval_epoch(val_loader, network, criterion, optimizer, args, mode='hnsw')
 
-        else:
-            bacc1, val_loss, csv_output_dict = eval_epoch(val_loader, network, criterion, optimizer, args)
-
-        # DataFrame construction
-        csv_output_df = pd.DataFrame(csv_output_dict)
-
-        # Step 4: Write to CSV
-        output_csv_path = args.output_csv_dir + f'/model_output_epoch_{epoch-1}.csv'
-        csv_output_df.to_csv(output_csv_path, index=False)
-        
-        # Save checkpoint based on best acc
-        # This criterion saves the models with the highest val accuracy
-        # Since the model evaluated above corresponds to the previous training epoch, we save this model as epoch-1, before it moves on to be trained for epoch
-        bacc_is_best = bacc1 > best_bacc1
-        best_bacc1 = max(bacc1, best_bacc1)
-        if bacc_is_best:
-            save_checkpoint(epoch-1, network, optimizer,
-                      args.ckpt_dir, scheduler, is_best=False) # Save global "best" model based on loss and not on BACC
-        
         print('Training...')
         train_epoch(train_loader, network, criterion, optimizer, args)
         scheduler.step()
         
+        bacc1, val_loss, csv_output_dict = run_evaluation(val_loader, network, criterion, optimizer, args)
+        
+        # DataFrame construction
+        csv_output_df = pd.DataFrame(csv_output_dict)
+
+        # Step 4: Write to CSV
+        output_csv_path = args.output_csv_dir + f'/model_output_epoch_{epoch}.csv'
+        csv_output_df.to_csv(output_csv_path, index=False)
+        
+        # Save checkpoint based on best acc
+        # This criterion saves the models with the highest val accuracy
+        bacc_is_best = bacc1 > best_bacc1
+        best_bacc1 = max(bacc1, best_bacc1)
+        if bacc_is_best:
+            save_checkpoint(epoch, network, optimizer,
+                      args.ckpt_dir, scheduler, is_best=False) # Save global "best" model based on loss and not on BACC
+            
         # This criterion saves the models with the lowest validation loss
         is_best = val_loss < lowest_val_loss
         lowest_val_loss = min(val_loss, lowest_val_loss)
         
-        # if epoch % args.log_interval == 0:
-        # Save model when the loss is the lowest and not in the pre-determined log interval
         if is_best:
             save_checkpoint(epoch, network, optimizer,
                       args.ckpt_dir, scheduler, is_best=is_best)
@@ -413,6 +398,29 @@ def main():
             metric_m.reset_state()
         for _, metric_m in args.val_metrics.items():
             metric_m.reset_state()
+
+
+def run_evaluation(val_loader, network, criterion, optimizer, args):
+        if args.train_method == 'nwhead':
+            network.eval()
+            network.precompute()
+            print('Evaluating on random mode...')
+            eval_epoch(val_loader, network, criterion, optimizer, args, mode='random')
+            print('Evaluating on full mode...')
+            bacc1, val_loss, csv_output_dict = eval_epoch(val_loader, network, criterion, optimizer, args, mode='full')
+            print('Evaluating on cluster mode...')
+            eval_epoch(val_loader, network, criterion, optimizer, args, mode='cluster')
+            print('Evaluating on ensemble mode...')
+            eval_epoch(val_loader, network, criterion, optimizer, args, mode='ensemble')
+            print('Evaluating on knn mode...')
+            eval_epoch(val_loader, network, criterion, optimizer, args, mode='knn')
+            print('Evaluating on hnsw mode...')
+            eval_epoch(val_loader, network, criterion, optimizer, args, mode='hnsw')
+
+        else:
+            bacc1, val_loss, csv_output_dict = eval_epoch(val_loader, network, criterion, optimizer, args)
+            
+        return bacc1, val_loss, csv_output_dict
 
 
 def train_epoch(train_loader, network, criterion, optimizer, args):
