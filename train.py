@@ -45,7 +45,7 @@ class Parser(argparse.ArgumentParser):
 
         # Machine learning parameters
         self.add_argument('--dataset', type=str, required=True)
-        self.add_argument('--lr', type=float, default=5e-3,
+        self.add_argument('--lr', type=float, default=5e-4,
                   help='Learning rate')
         self.add_argument('--batch_size', type=int,
                   default=64, help='Batch size')
@@ -70,7 +70,7 @@ class Parser(argparse.ArgumentParser):
         self.add_argument(
           '--train_method', default='nwhead')
         self.add_bool_arg('freeze_featurizer', False)
-        self.add_argument('--train_class', type=str, default="Edema")
+        self.add_argument('--train_class', type=str, default="Fracture")
 
         # NW head parameters
         self.add_argument('--kernel_type', type=str, default='euclidean',
