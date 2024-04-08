@@ -25,6 +25,8 @@ from torch.utils.data import DataLoader
 from PIL import Image
 import torch.nn.functional as F
 from torch.optim import AdamW
+from collections import Counter
+from torch.utils.data import Dataset
 
 class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Edema"):
