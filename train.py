@@ -5,6 +5,8 @@ import torch
 from torchvision import transforms, datasets
 import sys
 sys.path.insert(0,'/dataNAS/people/ewesel1/nwhead-1/data/')
+import data.bird
+import data.chexpert
 from data.chexpert import ChexpertDataset
 from tqdm import tqdm
 import argparse
