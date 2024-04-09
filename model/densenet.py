@@ -182,9 +182,9 @@ def _load_state_dict(model, model_url, progress):
     model.load_state_dict(state_dict, strict=False)
 
 
-def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, progress, num_classes, bias,
+def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, progress, bias,
               **kwargs):
-    model = DenseNet(growth_rate, block_config, num_init_features, num_classes=num_classes, bias=bias, **kwargs)
+    model = DenseNet(growth_rate, block_config, num_init_features, bias=bias, **kwargs)
     if pretrained:
         _load_state_dict(model, model_urls[arch], progress)
     return model
@@ -199,7 +199,7 @@ def densenet121(pretrained=False, progress=True, num_classes=10, bias=True, **kw
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
-    return _densenet('densenet121', 32, (6, 12, 24, 16), 64, pretrained, progress, num_classes=num_classes, bias=bias,
+    return _densenet('densenet121', 32, (6, 12, 24, 16), 64, pretrained, progress, bias=bias,
                      **kwargs)
 
 

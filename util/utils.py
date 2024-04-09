@@ -100,3 +100,41 @@ class ParseKwargs(argparse.Action):
             else:
                 processed_val = value_str
             getattr(namespace, self.dest)[key] = processed_val
+            
+            
+class EarlyStopping:
+    def __init__(self, patience=5, mode='min', delta=0):
+        self.patience = patience
+        self.mode = mode
+        self.delta = delta
+        self.counter = 0
+        self.best_score = None
+        self.early_stop = False
+        if self.mode == 'min':
+            self.best_score = np.Inf
+        else:
+            self.best_score = -np.Inf
+
+    def __call__(self, val_loss):
+        if self.mode == 'min':
+            score = -val_loss
+        else:
+            score = val_loss
+
+        if self.best_score is None:
+            self.best_score = score
+            self.save_checkpoint(val_loss)
+        elif score < self.best_score + self.delta:
+            self.counter += 1
+            if self.counter >= self.patience:
+                self.early_stop = True
+        else:
+            self.best_score = score
+            self.save_checkpoint(val_loss)
+            self.counter = 0
+
+    def save_checkpoint(self, val_loss):
+        if self.mode == 'min':
+            print(f'Validation loss decreased ({self.best_score:.6f} --> {val_loss:.6f}). Saving model...')
+        else:
+            print(f'Validation loss increased ({self.best_score:.6f} --> {val_loss:.6f}). Saving model...')

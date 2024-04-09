@@ -12,7 +12,7 @@ Forward Args:
 
 class EuclideanDistance(nn.Module):
     def forward(self, x, y):
-        return -torch.cdist(x, y)
+        return -torch.cdist(x.contiguous(), y.contiguous())
 
 class HypersphereEuclideanDistance(nn.Module):
     def forward(self, x, y):
