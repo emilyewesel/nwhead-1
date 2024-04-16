@@ -687,7 +687,7 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
         if is_train:
             # Apply dropout during training
             output = network(img, gender)
-            output = F.dropout(output, p=0.3, training=True)  # Applying dropout
+            output = F.dropout(output, p=0.5, training=True)  # Applying dropout
         else:
             output = network.predict(img, mode)
         loss = criterion(output, label)
