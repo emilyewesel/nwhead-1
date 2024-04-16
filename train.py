@@ -685,7 +685,9 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
     optimizer.zero_grad()
     with torch.set_grad_enabled(is_train):
         if is_train:
+            # Apply dropout during training
             output = network(img, gender)
+            output = F.dropout(output, p=args.dropout_prob, training=True)  # Applying dropout
         else:
             output = network.predict(img, mode)
         loss = criterion(output, label)
