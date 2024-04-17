@@ -33,7 +33,7 @@ from collections import Counter
 from torch.utils.data import Dataset
 
 class ChexpertDataset(Dataset):
-    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Edema"):
+    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardioemgaly"):
         self.df = pd.read_csv(csv_file)
 
         if train_class == "No Finding":
@@ -145,7 +145,7 @@ class Parser(argparse.ArgumentParser):
         self.add_argument(
           '--train_method', default='nwhead')
         self.add_bool_arg('freeze_featurizer', False)
-        self.add_argument('--train_class', type=str, default="Fracture")
+        self.add_argument('--train_class', type=str, default="Cardiomegaly")
 
         # NW head parameters
         self.add_argument('--kernel_type', type=str, default='euclidean',
