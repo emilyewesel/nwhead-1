@@ -514,7 +514,8 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
             gender = gender.to(args.device)
             #predictions will be argmax of softmax
             train_csv_output_dict = {}
-            predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
+            predictions = np.argmax(step_res['prob'].detach().cpu().numpy(), axis=1)
+            # predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
             for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].cpu().numpy(), gender.cpu().numpy(), id):
                 
                 train_csv_output_dict.append({
