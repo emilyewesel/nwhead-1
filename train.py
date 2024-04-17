@@ -506,6 +506,27 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
         total=min(len(train_loader), args.num_steps_per_epoch)):
         if args.train_method == 'fchead':
             step_res = fc_step(batch, network, criterion, optimizer, args, is_train=True)
+            #step_res has predictions 
+            #step_res["gt"]
+            img, label, gender, id = batch
+            img = img.float().to(args.device)
+            label = label.to(args.device)
+            gender = gender.to(args.device)
+            #predictions will be argmax of softmax
+            train_csv_output_dict = {}
+            predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
+            for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].cpu().numpy(), gender.cpu().numpy(), id):
+                
+                train_csv_output_dict.append({
+                    'Ground Truth': label.item(),
+                    'Prediction': pred,
+                    'Probability Class 0': prob[0],
+                    'Probability Class 1': prob[1],
+                    'Gender': gend,
+                    'Path': img_id
+                })
+            
+
         else:
             step_res = nw_step(batch, network, criterion, optimizer, args, is_train=True)
         args.metrics['loss:train'].update_state(step_res['loss'], step_res['batch_size'])
@@ -513,6 +534,9 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
         args.metrics['balanced_acc:train'].update_state(step_res['balanced_acc'], step_res['batch_size'])
         if i == args.num_steps_per_epoch:
             break
+    if args.train_method == 'fchead':
+        return train_csv_output_dict
+
 
 def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     '''Eval for one epoch.'''
@@ -667,6 +691,7 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
         balanced_acc = metric.balanced_acc_fcn(output.argmax(-1), label)
+        #emily use prob and gt to create the dictionary
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
@@ -687,7 +712,7 @@ def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='ran
         if is_train:
             # Apply dropout during training
             output = network(img, gender)
-            output = F.dropout(output, p=0.5, training=True)  # Applying dropout
+            # output = F.dropout(output, p=0.5, training=True)  # Applying dropout
         else:
             output = network.predict(img, mode)
         loss = criterion(output, label)
