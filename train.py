@@ -37,6 +37,7 @@ class ChexpertDataset(Dataset):
         self.df = pd.read_csv(csv_file)
         
         if train_class == "Cardiomegaly" and correct_support_only and train:
+            print("emily original", self.df.head())
             self.df_fc_results = pd.read_csv(fc_results)
             print("emily fc", self.df_fc_results.head())
             merged = pd.merge(self.df, self.df_fc_results, on='Path', how='inner')
