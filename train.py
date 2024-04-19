@@ -45,11 +45,13 @@ class ChexpertDataset(Dataset):
         
         if train_class == "Cardiomegaly" and correct_support_only and train:
 
-            print("emily original", self.df.head())
+            
             self.df_fc_results = pd.read_csv(fc_results)
-            print("emily fc", self.df_fc_results.head())
+            
             self.df_fc_results['Path'] = self.df_fc_results['Path'].apply(crop_path_results)
             self.df['Path'] = self.df['Path'].apply(crop_path_train)
+            print("emily original", self.df["Path"])
+            print("emily fc", self.df_fc_results["Path"])
             merged = pd.merge(self.df, self.df_fc_results, on='Path', how='inner')
             print("emily merged", merged.head())
             filtered_df = merged[merged['Ground Truth'] == merged['Prediction']]
