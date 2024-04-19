@@ -33,8 +33,13 @@ from collections import Counter
 from torch.utils.data import Dataset
 
 class ChexpertDataset(Dataset):
-    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardioemgaly"):
+    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardioemgaly", fc_results= None, correct_support_only=False):
         self.df = pd.read_csv(csv_file)
+        self.df_fc_results = pd.read_csv(fc_results)
+        if train_class == "Cardiomegaly" and correct_support_only:
+            merged = pd.merge(self.df, self.df_fc_results, on='Path', how='inner')
+            filtered_df = merged[merged['ground_truth'] == merged['prediction']]
+            self.df = filtered_df
 
         if train_class == "No Finding":
             self.df["No Finding"].fillna(0, inplace=True)
@@ -156,6 +161,7 @@ class Parser(argparse.ArgumentParser):
                   default=2, help='Number of examples per class in support')
         self.add_argument('--n_way', type=int,
                   default=None, help='Number of training classes per query in support')
+        self.add_argument('--correct_support_only', type = bool, default = False, help = "Should only correctly classified samples be included in the dataset? True if yes, False if no.")
 
         # Weights & Biases
         self.add_bool_arg('use_wandb', True)
@@ -186,7 +192,8 @@ class Parser(argparse.ArgumentParser):
                         nway=args.n_way,
                         wd=args.weight_decay,
                         seed=args.seed,
-                        train_class=args.train_class
+                        train_class=args.train_class,
+                        correct_support_only = args.correct_support_only
                       ))
         args.ckpt_dir = os.path.join(args.run_dir, 'checkpoints')
         args.output_csv_dir = os.path.join(args.run_dir, 'output_csv') 
@@ -280,7 +287,8 @@ def main():
         test_csv = '/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/valid.csv'
         baase = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
         baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
-        train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train_class=args.train_class, train=True)
+        fc_head_results = "/dataNAS/people/ewesel1/nwhead-1/saved_models/methodfchead_datasetchexpert_archresnet18_pretrainedFalse_lr0.0001_bs64_projdim0_nshot8_nwayNone_wd0.0001_seed1964_classCardiomegaly/output_csv/model_output_epoch_21.csv"
+        train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train_class=args.train_class, train=True, fc_results=fc_head_results, correct_support_only=args.correct_support_only)
         val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train_class=args.train_class, train=False)
         print("initialized datasets")
         train_dataset.num_classes = 2
