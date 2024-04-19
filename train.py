@@ -38,7 +38,7 @@ class ChexpertDataset(Dataset):
         self.df_fc_results = pd.read_csv(fc_results)
         if train_class == "Cardiomegaly" and correct_support_only:
             merged = pd.merge(self.df, self.df_fc_results, on='Path', how='inner')
-            filtered_df = merged[merged['ground_truth'] == merged['prediction']]
+            filtered_df = merged[merged['Ground Truth'] == merged['Prediction']]
             self.df = filtered_df
 
         if train_class == "No Finding":
