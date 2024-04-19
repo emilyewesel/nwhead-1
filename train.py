@@ -32,14 +32,24 @@ from torch.optim import AdamW
 from collections import Counter
 from torch.utils.data import Dataset
 
+def crop_path_results(path):
+    return path.split('/valid/')[-1]  # Crop path after valid
+def crop_path_train(path):
+    return path.split('/train/')[-1]  # Crop path after valid
+# Crop paths in the second dataset
+
+
 class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardiomegaly", fc_results= None, correct_support_only=False):
         self.df = pd.read_csv(csv_file)
         
         if train_class == "Cardiomegaly" and correct_support_only and train:
+
             print("emily original", self.df.head())
             self.df_fc_results = pd.read_csv(fc_results)
             print("emily fc", self.df_fc_results.head())
+            self.df_fc_results['Path'] = self.df_fc_results['Path'].apply(crop_path_results)
+            self.df['Path'] = self.df['Path'].apply(crop_path_train)
             merged = pd.merge(self.df, self.df_fc_results, on='Path', how='inner')
             print("emily merged", merged.head())
             filtered_df = merged[merged['Ground Truth'] == merged['Prediction']]
