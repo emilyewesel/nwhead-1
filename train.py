@@ -47,11 +47,11 @@ class ChexpertDataset(Dataset):
             
             self.df_fc_results = pd.read_csv(fc_results)
             
-            # self.df_fc_results['Path'] = self.df_fc_results['Path'].apply(crop_path_results)
-            # self.df['Path'] = self.df['Path'].apply(crop_path_train)
-            print("emily original", self.df["Path"])
-            print("emily fc", self.df_fc_results["Path"])
-            merged = pd.merge(self.df, self.df_fc_results, on='Path', how='inner')
+            self.df_fc_results['mrege_Path'] = self.df_fc_results['Path'].apply(crop_path_results)
+            self.df['merge_Path'] = self.df['Path'].apply(crop_path_train)
+            print("emily original", self.df["merge_Path"])
+            print("emily fc", self.df_fc_results["merge_Path"])
+            merged = pd.merge(self.df, self.df_fc_results, on='merge_Path', how='inner')
             print("emily merged", merged.head())
             filtered_df = merged[merged['Ground Truth'] == merged['Prediction']]
             print("emily filtered", filtered_df.head())
