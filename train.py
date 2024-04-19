@@ -43,7 +43,7 @@ class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardiomegaly", fc_results= None, correct_support_only=False):
         self.df = pd.read_csv(csv_file)
         
-        if train_class == "Cardiomegaly" and correct_support_only and train:
+        if train_class == "Cardiomegaly" and correct_support_only and train and False:
 
             
             self.df_fc_results = pd.read_csv(fc_results)
@@ -440,17 +440,22 @@ def main():
         print('Epoch:', epoch)
 
         print('Training...')
-        train_epoch(train_loader, network, criterion, optimizer, args)
+        train_csv_output_dict = train_epoch(train_loader, network, criterion, optimizer, args)
         scheduler.step()
         
         bacc1, val_loss, csv_output_dict = run_evaluation(val_loader, network, criterion, optimizer, args)
         
         # DataFrame construction
         csv_output_df = pd.DataFrame(csv_output_dict)
+        if args.train_method == "fchead":
+            train_csv_output_df = pd.DataFrame(train_csv_output_dict)
 
         # Step 4: Write to CSV
         output_csv_path = args.output_csv_dir + f'/model_output_epoch_{epoch}.csv'
         csv_output_df.to_csv(output_csv_path, index=False)
+        if args.train_method == "fchead":
+            output_csv_path = args.output_csv_dir + f'/train_model_output_epoch_{epoch}.csv'
+            train_csv_output_df.to_csv(output_csv_path, index=False)
         
         # Save checkpoint based on best acc
         # This criterion saves the models with the highest val accuracy
