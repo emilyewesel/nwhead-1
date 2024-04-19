@@ -33,7 +33,7 @@ from collections import Counter
 from torch.utils.data import Dataset
 
 def crop_path_results(path):
-    return path.split('/valid/')[-1]  # Crop path after valid
+    return path.split('/train/')[-1]  # Crop path after valid
 def crop_path_train(path):
     return path.split('/train/')[-1]  # Crop path after valid
 # Crop paths in the second dataset
