@@ -47,8 +47,8 @@ class ChexpertDataset(Dataset):
             
             self.df_fc_results = pd.read_csv(fc_results)
             
-            self.df_fc_results['Path'] = self.df_fc_results['Path'].apply(crop_path_results)
-            self.df['Path'] = self.df['Path'].apply(crop_path_train)
+            # self.df_fc_results['Path'] = self.df_fc_results['Path'].apply(crop_path_results)
+            # self.df['Path'] = self.df['Path'].apply(crop_path_train)
             print("emily original", self.df["Path"])
             print("emily fc", self.df_fc_results["Path"])
             merged = pd.merge(self.df, self.df_fc_results, on='Path', how='inner')
