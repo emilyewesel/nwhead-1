@@ -43,8 +43,7 @@ class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardiomegaly", fc_results= None, correct_support_only=False):
         self.df = pd.read_csv(csv_file)
         
-        if train_class == "Cardiomegaly" and correct_support_only and train and False:
-
+        if train_class == "Cardiomegaly" and correct_support_only and train:
             
             self.df_fc_results = pd.read_csv(fc_results)
             
@@ -304,7 +303,7 @@ def main():
         test_csv = '/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/valid.csv'
         baase = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
         baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
-        fc_head_results = "/dataNAS/people/ewesel1/nwhead-1/saved_models/methodfchead_datasetchexpert_archresnet18_pretrainedFalse_lr0.0001_bs64_projdim0_nshot8_nwayNone_wd0.0001_seed1964_classCardiomegaly/output_csv/model_output_epoch_1.csv"
+        fc_head_results = "/dataNAS/people/ewesel1/nwhead-1/saved_models/methodfchead_datasetchexpert_archresnet18_pretrainedFalse_lr0.0001_bs64_projdim0_nshot8_nwayNone_wd0.0001_seed1964_classCardiomegaly/output_csv/train_model_output_epoch_1.csv"
         train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train_class=args.train_class, train=True, fc_results=fc_head_results, correct_support_only=args.correct_support_only)
         val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train_class=args.train_class, train=False)
         print("initialized datasets")
