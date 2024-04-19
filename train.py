@@ -33,10 +33,10 @@ from collections import Counter
 from torch.utils.data import Dataset
 
 class ChexpertDataset(Dataset):
-    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardioemgaly", fc_results= None, correct_support_only=False):
+    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardiomegaly", fc_results= None, correct_support_only=False):
         self.df = pd.read_csv(csv_file)
         self.df_fc_results = pd.read_csv(fc_results)
-        if train_class == "Cardiomegaly" and correct_support_only:
+        if train_class == "Cardiomegaly" and correct_support_only and train:
             merged = pd.merge(self.df, self.df_fc_results, on='Path', how='inner')
             filtered_df = merged[merged['Ground Truth'] == merged['Prediction']]
             self.df = filtered_df
