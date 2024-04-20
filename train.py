@@ -308,7 +308,7 @@ def main():
         # train_dataset_correct_only = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train_class=args.train_class, train=True, fc_results=fc_head_results, correct_support_only=True)
         val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train_class=args.train_class, train=False)
         print("initialized datasets")
-        train_dataset.num_classes = 2
+        # train_dataset.num_classes = 2
         
         genders = train_dataset.genders
         if args.correct_support_only:
