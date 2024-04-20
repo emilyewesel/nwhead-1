@@ -311,10 +311,10 @@ def main():
         train_dataset.num_classes = 2
         
         genders = train_dataset.genders
-        args.correct_support_only = False
-        if args.correct_support_only:
-            train_dataset_correct_only.num_classes = 2
-            genders = train_dataset_correct_only.genders
+        # args.correct_support_only = False
+        # if args.correct_support_only:
+        #     train_dataset_correct_only.num_classes = 2
+        #     genders = train_dataset_correct_only.genders
         # train_dataset.targets = train_dataset._labels  # Add this line
         class_weights = train_dataset.compute_class_weights()
         print("Class Weights:", class_weights)
@@ -384,28 +384,28 @@ def main():
                         feat_dim, 
                         num_classes)
     elif args.train_method == 'nwhead':
-        if args.correct_support_only:
-            network = NWNet(featurizer, 
-                            num_classes,
-                            support_dataset=train_dataset_correct_only,
-                            feat_dim=feat_dim,
-                            proj_dim=args.proj_dim,
-                            kernel_type=args.kernel_type,
-                            n_shot=args.n_shot,
-                            n_way=args.n_way,
-                            env_array = genders,
-                            debug_mode=args.debug_mode)
-        else:
-            network = NWNet(featurizer, 
-                            num_classes,
-                            support_dataset=train_dataset,
-                            feat_dim=feat_dim,
-                            proj_dim=args.proj_dim,
-                            kernel_type=args.kernel_type,
-                            n_shot=args.n_shot,
-                            n_way=args.n_way,
-                            env_array = genders,
-                            debug_mode=args.debug_mode)
+        # # if args.correct_support_only:
+        # #     network = NWNet(featurizer, 
+        # #                     num_classes,
+        # #                     support_dataset=train_dataset_correct_only,
+        # #                     feat_dim=feat_dim,
+        # #                     proj_dim=args.proj_dim,
+        # #                     kernel_type=args.kernel_type,
+        # #                     n_shot=args.n_shot,
+        # #                     n_way=args.n_way,
+        # #                     env_array = genders,
+        # #                     debug_mode=args.debug_mode)
+        # else:
+        network = NWNet(featurizer, 
+                        num_classes,
+                        support_dataset=train_dataset,
+                        feat_dim=feat_dim,
+                        proj_dim=args.proj_dim,
+                        kernel_type=args.kernel_type,
+                        n_shot=args.n_shot,
+                        n_way=args.n_way,
+                        env_array = genders,
+                        debug_mode=args.debug_mode)
     else:
         raise NotImplementedError()
     summary(network)
