@@ -304,7 +304,8 @@ def main():
         baase = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
         baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
         fc_head_results = "/dataNAS/people/ewesel1/nwhead-1/saved_models/methodfchead_datasetchexpert_archresnet18_pretrainedFalse_lr0.0001_bs64_projdim0_nshot8_nwayNone_wd0.0001_seed1964_classCardiomegaly/output_csv/train_model_output_epoch_26.csv"
-        train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train_class=args.train_class, train=True, fc_results=fc_head_results, correct_support_only=args.correct_support_only)
+        train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train_class=args.train_class, train=True, fc_results=fc_head_results, correct_support_only=False)
+        train_dataset_correct_only = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train_class=args.train_class, train=True, fc_results=fc_head_results, correct_support_only=True)
         val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train_class=args.train_class, train=False)
         print("initialized datasets")
         train_dataset.num_classes = 2
@@ -378,16 +379,28 @@ def main():
                         feat_dim, 
                         num_classes)
     elif args.train_method == 'nwhead':
-        network = NWNet(featurizer, 
-                        num_classes,
-                        support_dataset=train_dataset,
-                        feat_dim=feat_dim,
-                        proj_dim=args.proj_dim,
-                        kernel_type=args.kernel_type,
-                        n_shot=args.n_shot,
-                        n_way=args.n_way,
-                        env_array = genders,
-                        debug_mode=args.debug_mode)
+        if args.correct_support_only:
+            network = NWNet(featurizer, 
+                            num_classes,
+                            support_dataset=train_dataset_correct_only,
+                            feat_dim=feat_dim,
+                            proj_dim=args.proj_dim,
+                            kernel_type=args.kernel_type,
+                            n_shot=args.n_shot,
+                            n_way=args.n_way,
+                            env_array = genders,
+                            debug_mode=args.debug_mode)
+        else:
+            network = NWNet(featurizer, 
+                            num_classes,
+                            support_dataset=train_dataset,
+                            feat_dim=feat_dim,
+                            proj_dim=args.proj_dim,
+                            kernel_type=args.kernel_type,
+                            n_shot=args.n_shot,
+                            n_way=args.n_way,
+                            env_array = genders,
+                            debug_mode=args.debug_mode)
     else:
         raise NotImplementedError()
     summary(network)
