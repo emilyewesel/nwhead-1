@@ -310,6 +310,8 @@ def main():
         print("initialized datasets")
         train_dataset.num_classes = 2
         genders = train_dataset.genders
+        if args.correct_support_only:
+            genders = train_dataset_correct_only.genders
         # train_dataset.targets = train_dataset._labels  # Add this line
         class_weights = train_dataset.compute_class_weights()
         print("Class Weights:", class_weights)
