@@ -309,8 +309,10 @@ def main():
         val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train_class=args.train_class, train=False)
         print("initialized datasets")
         train_dataset.num_classes = 2
+        
         genders = train_dataset.genders
         if args.correct_support_only:
+            train_dataset_correct_only.num_classes = 2
             genders = train_dataset_correct_only.genders
         # train_dataset.targets = train_dataset._labels  # Add this line
         class_weights = train_dataset.compute_class_weights()
