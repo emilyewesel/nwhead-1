@@ -43,19 +43,19 @@ class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardiomegaly", fc_results= None, correct_support_only=False):
         self.df = pd.read_csv(csv_file)
         
-        if train_class == "Cardiomegaly" and correct_support_only and train:
+        # if train_class == "Cardiomegaly" and correct_support_only and train:
             
-            self.df_fc_results = pd.read_csv(fc_results)
+        #     self.df_fc_results = pd.read_csv(fc_results)
             
-            self.df_fc_results['merge_Path'] = self.df_fc_results['Path'].apply(crop_path_results)
-            self.df['merge_Path'] = self.df['Path'].apply(crop_path_train)
-            print("emily original", self.df["merge_Path"])
-            print("emily fc", self.df_fc_results["merge_Path"])
-            merged = pd.merge(self.df, self.df_fc_results, on='merge_Path', how='inner')
-            print("emily merged", merged.head())
-            filtered_df = merged[merged['Ground Truth'] == merged['Prediction']]
-            print("emily filtered", filtered_df.head())
-            self.df = filtered_df
+        #     self.df_fc_results['merge_Path'] = self.df_fc_results['Path'].apply(crop_path_results)
+        #     self.df['merge_Path'] = self.df['Path'].apply(crop_path_train)
+        #     print("emily original", self.df["merge_Path"])
+        #     print("emily fc", self.df_fc_results["merge_Path"])
+        #     merged = pd.merge(self.df, self.df_fc_results, on='merge_Path', how='inner')
+        #     print("emily merged", merged.head())
+        #     filtered_df = merged[merged['Ground Truth'] == merged['Prediction']]
+        #     print("emily filtered", filtered_df.head())
+        #     self.df = filtered_df
 
         if train_class == "No Finding":
             self.df["No Finding"].fillna(0, inplace=True)
