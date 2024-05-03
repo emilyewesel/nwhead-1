@@ -21,6 +21,7 @@ from util import metric
 from model import load_model
 from nwhead.nw import NWNet
 from fchead.fc import FCNet
+from fchead.erm import ERM
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
@@ -226,8 +227,6 @@ class Parser(argparse.ArgumentParser):
         with open(args.run_dir + "/args.txt", 'w') as args_file:
             json.dump(vars(args), args_file, indent=4)
         return args
-
-    
 def main():
     
     # Parse arguments
@@ -383,6 +382,10 @@ def main():
         network = FCNet(featurizer, 
                         feat_dim, 
                         num_classes)
+    if args.train_method == "erm":
+        network = ERM(data_type="images",input_shape = next(train_dataset).shape,
+                      num_classes=2, num_attributes=0, num_examples=0, hparams=0, grp_sizes=None)
+
     elif args.train_method == 'nwhead':
         if args.correct_support_only:
             network = NWNet(featurizer, 
@@ -492,7 +495,7 @@ def main():
     
         print("Train loss={:.6f}, train acc={:.6f}, lr={:.6f}".format(
             args.metrics['loss:train'].result(), args.metrics['acc:train'].result(), scheduler.get_last_lr()[0]))
-        if args.train_method == 'fchead':
+        if args.train_method == 'fchead' or args.train_method == 'erm':
             print("Val loss={:.6f}, val acc={:.6f}".format(
                 args.val_metrics['loss:val'].result(), args.val_metrics['acc:val'].result()))
             print()
@@ -551,7 +554,7 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
     train_csv_output_dict = []
     for i, batch in tqdm(enumerate(train_loader), 
         total=min(len(train_loader), args.num_steps_per_epoch)):
-        if args.train_method == 'fchead':
+        if args.train_method == 'fchead' or args.train_method == "erm":
             step_res = fc_step(batch, network, criterion, optimizer, args, is_train=True)
             #step_res has predictions 
             #step_res["gt"]
@@ -707,7 +710,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'tpr:val:female'].update_state(metric.tpr_score(female_gts_np, female_predictions), step_res['batch_size'])
         args.val_metrics[f'auc:val:female'].update_state(metric.auc_score(female_gts_np,  female_probs_np[:,1]), step_res['batch_size'])
         return args.val_metrics['balanced_acc:val'].result(), args.val_metrics['loss:val'].result(), csv_output_dict
-    else:
+    elif args.train_method =="nwhead":
         male_predictions = np.argmax(male_probs_np, axis=1)
         female_predictions = np.argmax(female_probs_np, axis=1)
         args.val_metrics[f'acc:val:{mode}:male'].update_state(male_acc * 100, 1)
