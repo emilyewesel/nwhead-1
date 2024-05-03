@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torch.autograd as autograd
 import numpy as np
 from transformers import get_scheduler
-from optimizers import get_optimizers
+from fchead.optimizers import get_optimizers
 import networks
 
 class Algorithm(torch.nn.Module):
