@@ -394,7 +394,9 @@ def main():
             "weight_decay": 0.01,
             "nonlinear_classifier": False,
             "image_arch" : "resnet_sup_in1k", 
-            "pretrained": True
+            "pretrained": False, 
+            "resnet18": True,
+            'last_layer_dropout': 0
         }
 
         # Instantiate the ERM network
