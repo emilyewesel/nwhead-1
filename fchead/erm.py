@@ -132,3 +132,5 @@ class ERM(Algorithm):
 
     def predict(self, x):
         return self.network(x)
+    def forward(self, x):
+        return self.network(x)
