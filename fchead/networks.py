@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models  # https://github.com/pytorch/hub/issues/46
 from transformers import BertModel, DistilBertModel, GPT2Model, AutoModel
-from subpopbench.models import wide_resnet
+from fchead import wide_resnet
 import timm
 from torch.hub import load_state_dict_from_url
 
