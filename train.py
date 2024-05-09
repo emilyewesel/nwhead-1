@@ -383,9 +383,28 @@ def main():
                         feat_dim, 
                         num_classes)
     if args.train_method == "erm":
-        network = ERM(data_type="images",input_shape = next(train_dataset).shape,
-                      num_classes=2, num_attributes=0, num_examples=0, hparams=0, grp_sizes=None)
+        # Define the hyperparameters for the ERM network
+        hparams_erm = {
+            "mlp_width": 512,
+            "mlp_depth": 3,
+            "mlp_dropout": 0.5,
+            "last_layer_dropout": 0.5,
+            "optimizer": "adamw",
+            "lr": 0.001,
+            "weight_decay": 0.01,
+            "nonlinear_classifier": False
+        }
 
+        # Instantiate the ERM network
+        network = ERM(
+            data_type="images",
+            input_shape=train_dataset[0][0].shape,  # Assuming train_dataset returns (image, label, gender, img_name)
+            num_classes=2,  # Assuming binary classification
+            num_attributes=0,
+            num_examples=len(train_dataset),
+            hparams=hparams_erm,
+            grp_sizes=None
+        )
     elif args.train_method == 'nwhead':
         if args.correct_support_only:
             network = NWNet(featurizer, 
