@@ -629,7 +629,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         label = label.to(args.device)
         gender = gender.to(args.device)
 
-        if args.train_method == 'fchead':
+        if args.train_method == 'fchead' or args.train_method == 'erm':
             step_res = fc_step(batch, network, criterion, optimizer, args, is_train=False)
             args.val_metrics['loss:val'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics['acc:val'].update_state(step_res['acc'], step_res['batch_size'])
@@ -717,7 +717,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
 
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
     
-    if args.train_method == 'fchead':
+    if args.train_method == 'fchead' or args.train_method == 'erm':
         args.val_metrics[f'acc:val:male'].update_state(male_acc * 100, 1)
         args.val_metrics[f'ece:val:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:female'].update_state(female_acc * 100, 1)
