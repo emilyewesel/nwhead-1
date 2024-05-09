@@ -392,7 +392,8 @@ def main():
             "optimizer": "adamw",
             "lr": 0.001,
             "weight_decay": 0.01,
-            "nonlinear_classifier": False
+            "nonlinear_classifier": False,
+            "image_arch" : "resnet_sup_in1k"
         }
 
         # Instantiate the ERM network
@@ -404,7 +405,7 @@ def main():
             num_examples=len(train_dataset),
             hparams=hparams_erm,
             grp_sizes=None,
-            image_arch = "resnet_sup_in1k",
+            
         )
     elif args.train_method == 'nwhead':
         if args.correct_support_only:
