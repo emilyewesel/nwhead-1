@@ -403,7 +403,8 @@ def main():
             num_attributes=0,
             num_examples=len(train_dataset),
             hparams=hparams_erm,
-            grp_sizes=None
+            grp_sizes=None,
+            image_arch = "resnet_sup_in1k",
         )
     elif args.train_method == 'nwhead':
         if args.correct_support_only:
