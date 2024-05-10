@@ -732,8 +732,12 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     female_gts = torch.cat(gts['female'], dim=0)
     female_acc = metric.acc(female_probs.argmax(-1), female_gts)
 
-    male_probs_np = male_probs.cpu().numpy()
-    female_probs_np = female_probs.cpu().numpy()
+    if args.train_method == 'erm':
+        male_probs_np = male_probs.detach().cpu().numpy()
+        female_probs_np = female_probs.detach().cpu().numpy()
+    else: 
+        male_probs_np = male_probs.cpu().numpy()
+        female_probs_np = female_probs.cpu().numpy()
     male_gts_np = male_gts.cpu().numpy()
     female_gts_np = female_gts.cpu().numpy()
 
