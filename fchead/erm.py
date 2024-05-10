@@ -134,3 +134,37 @@ class ERM(Algorithm):
         return self.network(x)
     def forward(self, x):
         return self.network(x)
+class IRM(ERM):
+    """Invariant Risk Minimization"""
+    def __init__(self, data_type, input_shape, num_classes, num_attributes, num_examples, hparams, grp_sizes=None):
+        super(IRM, self).__init__(data_type, input_shape, num_classes, num_attributes, num_examples, hparams, grp_sizes)
+        self.register_buffer('update_count', torch.tensor([0]))
+
+    @staticmethod
+    def _irm_penalty(logits, y):
+        device = "cuda" if logits[0][0].is_cuda else "cpu"
+        scale = torch.tensor(1.).to(device).requires_grad_()
+        loss_1 = F.cross_entropy(logits[::2] * scale, y[::2])
+        loss_2 = F.cross_entropy(logits[1::2] * scale, y[1::2])
+        grad_1 = autograd.grad(loss_1, [scale], create_graph=True)[0]
+        grad_2 = autograd.grad(loss_2, [scale], create_graph=True)[0]
+        result = torch.sum(grad_1 * grad_2)
+        return result
+
+    def _compute_loss(self, i, x, y, a, step):
+        penalty_weight = self.hparams['irm_lambda'] \
+            if self.update_count >= self.hparams['irm_penalty_anneal_iters'] else 1.0
+        nll = 0.
+        penalty = 0.
+
+        logits = self.network(x)
+        for idx_a, idx_samples in self.return_attributes(a):
+            nll += F.cross_entropy(logits[idx_samples], y[idx_samples])
+            penalty += self._irm_penalty(logits[idx_samples], y[idx_samples])
+        nll /= len(a.unique())
+        penalty /= len(a.unique())
+        loss_value = nll + (penalty_weight * penalty)
+
+        self.update_count += 1
+        return loss_value
+    

@@ -22,6 +22,7 @@ from model import load_model
 from nwhead.nw import NWNet
 from fchead.fc import FCNet
 from fchead.erm import ERM
+from fchead.erm import IRM
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
@@ -382,7 +383,7 @@ def main():
         network = FCNet(featurizer, 
                         feat_dim, 
                         num_classes)
-    if args.train_method == "erm":
+    if args.train_method == "erm" or args.train_method == "irm":
         # Define the hyperparameters for the ERM network
         hparams_erm = {
             "mlp_width": 512,
@@ -399,17 +400,28 @@ def main():
             'last_layer_dropout': 0
         }
 
-        # Instantiate the ERM network
-        network = ERM(
-            data_type="images",
-            input_shape=train_dataset[0][0].shape,  # Assuming train_dataset returns (image, label, gender, img_name)
-            num_classes=2,  # Assuming binary classification
-            num_attributes=0,
-            num_examples=len(train_dataset),
-            hparams=hparams_erm,
-            grp_sizes=None,
-            
-        )
+        if args.train_method =="erm":
+            # Instantiate the ERM network
+            network = ERM(
+                data_type="images",
+                input_shape=train_dataset[0][0].shape,  # Assuming train_dataset returns (image, label, gender, img_name)
+                num_classes=2,  # Assuming binary classification
+                num_attributes=0,
+                num_examples=len(train_dataset),
+                hparams=hparams_erm,
+                grp_sizes=None,
+                )
+        else:
+            network = IRM(
+                data_type="images",
+                input_shape=train_dataset[0][0].shape,  # Assuming train_dataset returns (image, label, gender, img_name)
+                num_classes=2,  # Assuming binary classification
+                num_attributes=0,
+                num_examples=len(train_dataset),
+                hparams=hparams_erm,
+                grp_sizes=None,
+                )
+
     elif args.train_method == 'nwhead':
         if args.correct_support_only:
             network = NWNet(featurizer, 
@@ -519,7 +531,7 @@ def main():
     
         print("Train loss={:.6f}, train acc={:.6f}, lr={:.6f}".format(
             args.metrics['loss:train'].result(), args.metrics['acc:train'].result(), scheduler.get_last_lr()[0]))
-        if args.train_method == 'fchead' or args.train_method == 'erm':
+        if args.train_method == 'fchead' or args.train_method == 'erm' or args.train_method == "irm":
             print("Val loss={:.6f}, val acc={:.6f}".format(
                 args.val_metrics['loss:val'].result(), args.val_metrics['acc:val'].result()))
             print()
@@ -578,7 +590,7 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
     train_csv_output_dict = []
     for i, batch in tqdm(enumerate(train_loader), 
         total=min(len(train_loader), args.num_steps_per_epoch)):
-        if args.train_method == 'fchead' or args.train_method == "erm":
+        if args.train_method == 'fchead' or args.train_method == "erm" or args.train_method == "irm":
             if args.train_method == 'fchead':
                 step_res = fc_step(batch, network, criterion, optimizer, args, is_train=True)
             else: 
@@ -590,7 +602,7 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
             label = label.to(args.device)
             gender = gender.to(args.device)
             #predictions will be argmax of softmax
-            if args.train_method == 'erm':
+            if args.train_method == 'erm' or args.train_method == "irm":
                 predictions = np.argmax(step_res['prob'].detach().cpu().numpy(), axis=1)
             else:
                 predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
@@ -633,23 +645,23 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         label = label.to(args.device)
         gender = gender.to(args.device)
 
-        if args.train_method == 'fchead' or args.train_method == 'erm':
+        if args.train_method == 'fchead' or args.train_method == 'erm' or args.train_method == "irm":
             if args.train_method == 'fchead':
                 step_res = fc_step(batch, network, criterion, optimizer, args, is_train=False)
-            elif args.train_method == 'erm':
+            elif args.train_method == 'erm' or args.train_method == "irm":
                 step_res = erm_step(batch, network, criterion, optimizer, args, lr_scheduler=None, clip_grad=True, is_train=False)
             args.val_metrics['loss:val'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics['acc:val'].update_state(step_res['acc'], step_res['batch_size'])
             args.val_metrics['balanced_acc:val'].update_state(step_res['balanced_acc'], step_res['batch_size'])
             
             overall_ece = (ECELoss()(step_res['prob'], label) * 100).item()
-            if args.train_method == 'erm':
+            if args.train_method == 'erm' or args.train_method == "irm":
                 predictions = np.argmax(step_res['prob'].detach().cpu().numpy(), axis=1)
             else:
                 predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
             
             # Collect data; ensure they are detached and moved to CPU if necessary
-            if args.train_method == 'erm':
+            if args.train_method == 'erm' or args.train_method == "irm":
                 for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].detach().cpu().numpy(), gender.cpu().numpy(), id):
                     
                     csv_output_dict.append({
@@ -675,7 +687,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             args.val_metrics['ece:val'].update_state(overall_ece, 1)
             args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
             args.val_metrics['tpr:val'].update_state(metric.tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
-            if args.train_method == 'erm':
+            if args.train_method == 'erm' or args.train_method == "irm":
                 args.val_metrics['auc:val'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].detach().cpu().numpy()[:,1]), step_res['batch_size'])
             else:
                 args.val_metrics['auc:val'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
@@ -732,7 +744,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     female_gts = torch.cat(gts['female'], dim=0)
     female_acc = metric.acc(female_probs.argmax(-1), female_gts)
 
-    if args.train_method == 'erm':
+    if args.train_method == 'erm' or args.train_method == "irm":
         male_probs_np = male_probs.detach().cpu().numpy()
         female_probs_np = female_probs.detach().cpu().numpy()
     else: 
@@ -746,7 +758,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
 
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
     
-    if args.train_method == 'fchead' or args.train_method == 'erm':
+    if args.train_method == 'fchead' or args.train_method == 'erm' or args.train_method == "irm":
         args.val_metrics[f'acc:val:male'].update_state(male_acc * 100, 1)
         args.val_metrics[f'ece:val:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:female'].update_state(female_acc * 100, 1)
