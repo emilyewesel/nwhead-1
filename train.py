@@ -781,7 +781,7 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             'prob': output.exp(), \
             'gt': label}
 
-def erm_step(batch, model, optimizer, criterion, args, lr_scheduler=None, clip_grad=False, is_train=True):
+def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_grad=False, is_train=True):
     '''Train/val for one step.'''
     all_i, all_x, all_y, all_a = batch
     all_x = all_x.float().to(args.device)
