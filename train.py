@@ -786,12 +786,17 @@ def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_g
     all_i, all_x, all_y, all_a = batch
     all_x = all_x.float().to(args.device)
     all_y = all_y.to(args.device)
+
+    img, label, gender, id = batch
+    img = img.float().to(args.device)
+    label = label.to(args.device)
+
     optimizer = model.optimizer
 
     optimizer.zero_grad()
     with torch.set_grad_enabled(True):
-        output = model.predict(all_x)
-        loss = model._compute_loss(all_i, all_x, all_y, all_a, step)
+        output = model.predict(img)
+        loss = model._compute_loss(all_i, img, label, all_a, step)
         loss.backward()
         optimizer.step()
 
