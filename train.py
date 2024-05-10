@@ -579,7 +579,10 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
     for i, batch in tqdm(enumerate(train_loader), 
         total=min(len(train_loader), args.num_steps_per_epoch)):
         if args.train_method == 'fchead' or args.train_method == "erm":
-            step_res = fc_step(batch, network, criterion, optimizer, args, is_train=True)
+            if args.train_method == 'fchead':
+                step_res = fc_step(batch, network, criterion, optimizer, args, is_train=True)
+            else: 
+                step_res = erm_step(batch, network, criterion, optimizer, args, lr_scheduler=None, clip_grad=True, is_train=True)
             #step_res has predictions 
             #step_res["gt"]
             img, label, gender, id = batch
@@ -630,7 +633,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         gender = gender.to(args.device)
 
         if args.train_method == 'fchead' or args.train_method == 'erm':
-            step_res = fc_step(batch, network, criterion, optimizer, args, is_train=False)
+            if args.train_method == 'fchead':
+                step_res = fc_step(batch, network, criterion, optimizer, args, is_train=False)
+            elif args.train_method == 'erm':
+                step_res = erm_step(batch, network, criterion, optimizer, args, lr_scheduler=None, clip_grad=True, is_train=False)
             args.val_metrics['loss:val'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics['acc:val'].update_state(step_res['acc'], step_res['batch_size'])
             args.val_metrics['balanced_acc:val'].update_state(step_res['balanced_acc'], step_res['batch_size'])
@@ -774,6 +780,38 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             'batch_size': len(img), \
             'prob': output.exp(), \
             'gt': label}
+
+def erm_step(batch, model, optimizer, loss_fn, args, lr_scheduler=None, clip_grad=False, is_train=True):
+    '''Train/val for one step.'''
+    all_i, all_x, all_y, all_a = batch
+    all_x = all_x.float().to(args.device)
+    all_y = all_y.to(args.device)
+
+    loss_dict = model.update(batch, step=None) if is_train else {}
+
+    optimizer.zero_grad()
+    with torch.set_grad_enabled(is_train):
+        output = model.predict(all_x)
+        loss = loss_fn(output, all_y)
+        if is_train:
+            loss.backward()
+            if clip_grad:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            optimizer.step()
+
+    if lr_scheduler is not None:
+        lr_scheduler.step()
+
+    if model.data_type == "text":
+        model.network.zero_grad()
+
+    return {'loss': loss.cpu().detach().numpy(), \
+            'batch_size': len(all_x), \
+            'output': output.exp(), \
+            'label': all_y, \
+                        **loss_dict}
+
+
 
 
 def nw_step(batch, network, criterion, optimizer, args, is_train=True, mode='random'):
