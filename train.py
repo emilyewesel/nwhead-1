@@ -781,13 +781,42 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             'prob': output.exp(), \
             'gt': label}
 
-def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_grad=False, is_train=True):
+def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_grad=False, is_train=True, step = 0):
+    '''Train/val for one step.'''
+    all_i, all_x, all_y, all_a = batch
+    all_x = all_x.float().to(args.device)
+    all_y = all_y.to(args.device)
+    optimizer = model.optimizer
+
+    optimizer.zero_grad()
+    with torch.set_grad_enabled(True):
+        output = model.predict(all_x)
+        loss = model._compute_loss(all_i, all_x, all_y, all_a, step)
+        loss.backward()
+        optimizer.step()
+
+    # Calculate accuracy
+    preds = output.argmax(dim=-1)
+    correct = (preds == all_y).sum().item()
+    accuracy = correct / len(all_y)
+
+    # Calculate balanced accuracy
+    per_class_correct = [(preds[all_y == c] == c).sum().item() for c in range(model.num_classes)]
+    per_class_total = [(all_y == c).sum().item() for c in range(model.num_classes)]
+    balanced_accuracy = np.mean([pc_correct / pc_total if pc_total != 0 else 0 for pc_correct, pc_total in zip(per_class_correct, per_class_total)])
+
+    return {'loss': loss.cpu().detach().numpy(),
+            'accuracy': accuracy,
+            'balanced_accuracy': balanced_accuracy,
+            'batch_size': len(all_x)}
+
+def erm_step_old(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_grad=False, is_train=True):
     '''Train/val for one step.'''
     all_i, all_x, all_y, all_a = batch
     all_x = all_x.float().to(args.device)
     all_y = all_y.to(args.device)
 
-    # loss_dict = model.update(batch, step=None) if is_train else {}
+    # loss_dict = model.update(img, step=None) if is_train else {}
 
     img, label, gender, id = batch
     img = img.float().to(args.device)
