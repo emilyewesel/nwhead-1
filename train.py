@@ -781,7 +781,7 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             'prob': output.exp(), \
             'gt': label}
 
-def erm_step(batch, model, optimizer, loss_fn, args, lr_scheduler=None, clip_grad=False, is_train=True):
+def erm_step(batch, model, optimizer, criterion, args, lr_scheduler=None, clip_grad=False, is_train=True):
     '''Train/val for one step.'''
     all_i, all_x, all_y, all_a = batch
     all_x = all_x.float().to(args.device)
@@ -789,15 +789,21 @@ def erm_step(batch, model, optimizer, loss_fn, args, lr_scheduler=None, clip_gra
 
     loss_dict = model.update(batch, step=None) if is_train else {}
 
+    img, label, gender, id = batch
+    img = img.float().to(args.device)
+    label = label.to(args.device)
     optimizer.zero_grad()
     with torch.set_grad_enabled(is_train):
-        output = model.predict(all_x)
-        loss = loss_fn(output, all_y)
+        output = model(img)
+        loss = criterion(output, label)
         if is_train:
             loss.backward()
             if clip_grad:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
+        acc = metric.acc(output.argmax(-1), label)
+        balanced_acc = metric.balanced_acc_fcn(output.argmax(-1), label)
+
 
     if lr_scheduler is not None:
         lr_scheduler.step()
