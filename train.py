@@ -811,8 +811,8 @@ def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_g
     balanced_accuracy = np.mean([pc_correct / pc_total if pc_total != 0 else 0 for pc_correct, pc_total in zip(per_class_correct, per_class_total)])
 
     return {'loss': loss.cpu().detach().numpy(),
-            'accuracy': accuracy,
-            'balanced_accuracy': balanced_accuracy,
+            'acc': accuracy,
+            'balanced_acc': balanced_accuracy,
             'batch_size': len(all_x)}
 
 def erm_step_old(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_grad=False, is_train=True):
