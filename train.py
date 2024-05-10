@@ -787,7 +787,7 @@ def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_g
     all_x = all_x.float().to(args.device)
     all_y = all_y.to(args.device)
 
-    loss_dict = model.update(batch, step=None) if is_train else {}
+    # loss_dict = model.update(batch, step=None) if is_train else {}
 
     img, label, gender, id = batch
     img = img.float().to(args.device)
