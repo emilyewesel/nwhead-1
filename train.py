@@ -383,7 +383,7 @@ def main():
         network = FCNet(featurizer, 
                         feat_dim, 
                         num_classes)
-    if args.train_method == "erm" or args.train_method == "irm":
+    elif args.train_method == "erm" or args.train_method == "irm":
         # Define the hyperparameters for the ERM network
         hparams_erm = {
             "mlp_width": 512,
