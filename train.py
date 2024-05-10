@@ -812,10 +812,11 @@ def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_g
         model.network.zero_grad()
 
     return {'loss': loss.cpu().detach().numpy(), \
-            'batch_size': len(all_x), \
-            'output': output.exp(), \
-            'label': all_y, \
-                        **loss_dict}
+            'acc': acc * 100, \
+            'balanced_acc': balanced_acc * 100, \
+            'batch_size': len(img), \
+            'prob': output.exp(), \
+            'gt': label}
 
 
 
