@@ -649,7 +649,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
                 predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
             
             # Collect data; ensure they are detached and moved to CPU if necessary
-            if args.train_method == 'fchead':
+            if args.train_method == 'erm':
                 for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].detach().cpu().numpy(), gender.cpu().numpy(), id):
                     
                     csv_output_dict.append({
@@ -675,7 +675,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             args.val_metrics['ece:val'].update_state(overall_ece, 1)
             args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
             args.val_metrics['tpr:val'].update_state(metric.tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
-            args.val_metrics['auc:val'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
+            if args.train_method == 'erm':
+                args.val_metrics['auc:val'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].detach().cpu().numpy()[:,1]), step_res['batch_size'])
+            else:
+                args.val_metrics['auc:val'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
 
             for j in range(len(gender)):
                 gender_str = 'male' if gender[j] == 0 else 'female'
