@@ -813,6 +813,7 @@ def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_g
     return {'loss': loss.cpu().detach().numpy(),
             'acc': accuracy,
             'balanced_acc': balanced_accuracy,
+            'prob': output.exp(), 
             'batch_size': len(all_x)}
 
 def erm_step_old(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_grad=False, is_train=True):
