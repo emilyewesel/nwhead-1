@@ -649,7 +649,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
                 predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
             
             # Collect data; ensure they are detached and moved to CPU if necessary
-            if args.train_method == 'erm':
+            if args.train_method == 'fchead':
                 for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].detach().cpu().numpy(), gender.cpu().numpy(), id):
                     
                     csv_output_dict.append({
@@ -830,7 +830,8 @@ def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_g
             'acc': accuracy,
             'balanced_acc': balanced_accuracy,
             'prob': output.exp(), 
-            'batch_size': len(all_x)}
+            'batch_size': len(all_x), 
+            'gt': label}
 
 def erm_step_old(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_grad=False, is_train=True):
     '''Train/val for one step.'''
