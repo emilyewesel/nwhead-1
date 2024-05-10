@@ -400,6 +400,12 @@ def main():
             'last_layer_dropout': 0
         }
 
+        if args.train_method == "irm":
+            hparams_erm.update({
+            'irm_lambda': 10**np.random.uniform(-1, 5),
+            'irm_penalty_anneal_iters': int(10**np.random.uniform(0, 4))
+            })
+
         if args.train_method =="erm":
             # Instantiate the ERM network
             network = ERM(
