@@ -590,9 +590,10 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
             label = label.to(args.device)
             gender = gender.to(args.device)
             #predictions will be argmax of softmax
-            
-            predictions = np.argmax(step_res['prob'].detach().cpu().numpy(), axis=1)
-            # predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
+            if args.train_method == 'erm':
+                predictions = np.argmax(step_res['prob'].detach().cpu().numpy(), axis=1)
+            else:
+                predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
             for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].detach().cpu().numpy(), gender.detach().cpu().numpy(), id):
                 
                 train_csv_output_dict.append({
@@ -642,7 +643,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             args.val_metrics['balanced_acc:val'].update_state(step_res['balanced_acc'], step_res['batch_size'])
             
             overall_ece = (ECELoss()(step_res['prob'], label) * 100).item()
-            predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
+            if args.train_method == 'erm':
+                predictions = np.argmax(step_res['prob'].detach().cpu().numpy(), axis=1)
+            else:
+                predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
             
             # Collect data; ensure they are detached and moved to CPU if necessary
             for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].cpu().numpy(), gender.cpu().numpy(), id):
@@ -690,7 +694,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             args.val_metrics[f'ece:val:{mode}'].update_state(overall_ece, 1)
             args.val_metrics[f'f1:val:{mode}'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
             args.val_metrics[f'tpr:val:{mode}'].update_state(metric.tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
-            args.val_metrics[f'auc:val:{mode}'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
+            # args.val_metrics[f'auc:val:{mode}'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
 
             # Separate metrics for males and females
             for j in range(len(gender)):
