@@ -649,16 +649,28 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
                 predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
             
             # Collect data; ensure they are detached and moved to CPU if necessary
-            for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].cpu().numpy(), gender.cpu().numpy(), id):
-                
-                csv_output_dict.append({
-                    'Ground Truth': label.item(),
-                    'Prediction': pred,
-                    'Probability Class 0': prob[0],
-                    'Probability Class 1': prob[1],
-                    'Gender': gend,
-                    'Path': img_id
-                })
+            if args.train_method == 'erm':
+                for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].detach().cpu().numpy(), gender.cpu().numpy(), id):
+                    
+                    csv_output_dict.append({
+                        'Ground Truth': label.item(),
+                        'Prediction': pred,
+                        'Probability Class 0': prob[0],
+                        'Probability Class 1': prob[1],
+                        'Gender': gend,
+                        'Path': img_id
+                    })
+            else: 
+                for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].cpu().numpy(), gender.cpu().numpy(), id):
+                    
+                    csv_output_dict.append({
+                        'Ground Truth': label.item(),
+                        'Prediction': pred,
+                        'Probability Class 0': prob[0],
+                        'Probability Class 1': prob[1],
+                        'Gender': gend,
+                        'Path': img_id
+                    })
             
             args.val_metrics['ece:val'].update_state(overall_ece, 1)
             args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
