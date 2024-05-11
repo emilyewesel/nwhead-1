@@ -56,8 +56,10 @@ class Algorithm(torch.nn.Module):
     def return_attributes(all_a):
         """Given a list of attributes, return indexes of samples belonging to each attribute"""
         idx_a, idx_samples = [], []
+        all_a = np.array(all_a) if isinstance(all_a, list) else all_a
 
-        for a in all_a.unique():
+    # Check if all_a is a numpy array or tensor
+        for a in np.unique(all_a):  # Use np.unique for numpy array or torch.unique for tensor
             idx_a.append(a)
             idx_samples.append(all_a == a)
 
