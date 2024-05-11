@@ -163,8 +163,10 @@ class IRM(ERM):
         for idx_a, idx_samples in self.return_attributes(a):
             nll += F.cross_entropy(logits[idx_samples], y[idx_samples])
             penalty += self._irm_penalty(logits[idx_samples], y[idx_samples])
-        nll /= len(a.unique())
-        penalty /= len(a.unique())
+        a = np.array(a) if isinstance(a, list) else a
+        a_unique = np.unique(a)
+        nll /= len(a_unique)
+        penalty /= len(a_unique)
         loss_value = nll + (penalty_weight * penalty)
 
         self.update_count += 1
