@@ -608,10 +608,10 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
             label = label.to(args.device)
             gender = gender.to(args.device)
             #predictions will be argmax of softmax
-            if args.train_method == 'erm' or args.train_method == "irm":
-                predictions = np.argmax(step_res['prob'].detach().cpu().numpy(), axis=1)
-            else:
-                predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
+            # if args.train_method == 'erm' or args.train_method == "irm":
+            predictions = np.argmax(step_res['prob'].detach().cpu().numpy(), axis=1)
+            # else:
+            #     predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
             for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].detach().cpu().numpy(), gender.detach().cpu().numpy(), id):
                 
                 train_csv_output_dict.append({
@@ -661,34 +661,34 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             args.val_metrics['balanced_acc:val'].update_state(step_res['balanced_acc'], step_res['batch_size'])
             
             overall_ece = (ECELoss()(step_res['prob'], label) * 100).item()
-            if args.train_method == 'erm' or args.train_method == "irm":
-                predictions = np.argmax(step_res['prob'].detach().cpu().numpy(), axis=1)
-            else:
-                predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
+            # if args.train_method == 'erm' or args.train_method == "irm":
+            predictions = np.argmax(step_res['prob'].detach().cpu().numpy(), axis=1)
+            # else:
+            #     predictions = np.argmax(step_res['prob'].cpu().numpy(), axis=1)
             
             # Collect data; ensure they are detached and moved to CPU if necessary
-            if args.train_method == 'erm' or args.train_method == "irm":
-                for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].detach().cpu().numpy(), gender.cpu().numpy(), id):
+            # if args.train_method == 'erm' or args.train_method == "irm":
+            for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].detach().cpu().numpy(), gender.cpu().numpy(), id):
+                
+                csv_output_dict.append({
+                    'Ground Truth': label.item(),
+                    'Prediction': pred,
+                    'Probability Class 0': prob[0],
+                    'Probability Class 1': prob[1],
+                    'Gender': gend,
+                    'Path': img_id
+                })
+            # else: 
+            #     for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].cpu().numpy(), gender.cpu().numpy(), id):
                     
-                    csv_output_dict.append({
-                        'Ground Truth': label.item(),
-                        'Prediction': pred,
-                        'Probability Class 0': prob[0],
-                        'Probability Class 1': prob[1],
-                        'Gender': gend,
-                        'Path': img_id
-                    })
-            else: 
-                for label, pred, prob, gend, img_id in zip(label, predictions, step_res['prob'].cpu().numpy(), gender.cpu().numpy(), id):
-                    
-                    csv_output_dict.append({
-                        'Ground Truth': label.item(),
-                        'Prediction': pred,
-                        'Probability Class 0': prob[0],
-                        'Probability Class 1': prob[1],
-                        'Gender': gend,
-                        'Path': img_id
-                    })
+            #         csv_output_dict.append({
+            #             'Ground Truth': label.item(),
+            #             'Prediction': pred,
+            #             'Probability Class 0': prob[0],
+            #             'Probability Class 1': prob[1],
+            #             'Gender': gend,
+            #             'Path': img_id
+            #         })
             
             args.val_metrics['ece:val'].update_state(overall_ece, 1)
             args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
@@ -750,12 +750,12 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     female_gts = torch.cat(gts['female'], dim=0)
     female_acc = metric.acc(female_probs.argmax(-1), female_gts)
 
-    if args.train_method == 'erm' or args.train_method == "irm":
-        male_probs_np = male_probs.detach().cpu().numpy()
-        female_probs_np = female_probs.detach().cpu().numpy()
-    else: 
-        male_probs_np = male_probs.cpu().numpy()
-        female_probs_np = female_probs.cpu().numpy()
+    # if args.train_method == 'erm' or args.train_method == "irm":
+    male_probs_np = male_probs.detach().cpu().numpy()
+    female_probs_np = female_probs.detach().cpu().numpy()
+    # else: 
+    #     male_probs_np = male_probs.cpu().numpy()
+    #     female_probs_np = female_probs.cpu().numpy()
     male_gts_np = male_gts.cpu().numpy()
     female_gts_np = female_gts.cpu().numpy()
 
