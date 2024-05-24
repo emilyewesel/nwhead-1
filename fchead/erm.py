@@ -188,13 +188,13 @@ class GroupDRO(ERM):
         losses = self.loss(self.predict(x), y)
         # print("y", y.type, y) #tensor 
         
-        print("a", a) #list 
+        # print("a", a) #list 
         a= torch.tensor(a, device=y.device)
         # a = a.astype(y.type)
-        print("return groups", self.return_groups(y, a))
+        # print("return groups", self.return_groups(y, a))
         for idx_g, idx_samples in self.return_groups(y, a):
-            print("losses", losses[idx_samples])
-            print("self.q", self.q[idx_g])
+            # print("losses", losses[idx_samples])
+            # print("self.q", self.q[idx_g])
             self.q[idx_g] *= (self.hparams["groupdro_eta"] * losses[idx_samples].mean()).exp().item()
 
         self.q /= self.q.sum()
@@ -205,3 +205,157 @@ class GroupDRO(ERM):
 
         return loss_value
 
+class LISA(ERM):
+    """
+    Improving Out-of-Distribution Robustness via Selective Augmentation [https://arxiv.org/pdf/2201.00299.pdf]
+    """
+    def __init__(self, data_type, input_shape, num_classes, num_attributes, num_examples, hparams, grp_sizes=None):
+        super().__init__(
+            data_type, input_shape, num_classes, num_attributes, num_examples, hparams, grp_sizes)
+
+    def _to_ohe(self, y):
+        return F.one_hot(y, num_classes=self.num_classes)
+
+    def _lisa_mixup_data(self, s, a, x, y, alpha):
+        if (not self.data_type == "images") or self.hparams['LISA_mixup_method'] == 'mixup':
+            fn = self._mix_up
+        elif self.hparams['LISA_mixup_method'] == 'cutmix':
+            fn = self._cut_mix_up
+
+        all_mix_x, all_mix_y = [], []
+        bs = len(x)
+        # repeat until enough samples
+        while sum(list(map(len, all_mix_x))) < bs:
+            start_len = sum(list(map(len, all_mix_x)))
+            # same label, mixup between attributes
+            if s:
+                # can't do intra-label mixup with only one attribute
+                if len(torch.unique(a)) < 2:
+                    return x, y
+
+                for y_i in range(self.num_classes):
+                    mask = y[:, y_i].squeeze().bool()
+                    x_i, y_i, a_i = x[mask], y[mask], a[mask]
+                    unique_a_is = torch.unique(a_i)
+                    if len(unique_a_is) < 2:
+                        continue
+
+                    # if there are multiple attributes, choose a random pair
+                    a_i1, a_i2 = unique_a_is[torch.randperm(len(unique_a_is))][:2]
+                    mask2_1 = a_i == a_i1
+                    mask2_2 = a_i == a_i2
+                    all_mix_x_i, all_mix_y_i = fn(alpha, x_i[mask2_1], x_i[mask2_2], y_i[mask2_1], y_i[mask2_2])
+                    all_mix_x.append(all_mix_x_i)
+                    all_mix_y.append(all_mix_y_i)
+
+            # same attribute, mixup between labels
+            else:
+                # can't do intra-attribute mixup with only one label
+                if len(y.sum(axis=0).nonzero()) < 2:
+                    return x, y
+
+                for a_i in torch.unique(a):
+                    mask = a == a_i
+                    x_i, y_i = x[mask], y[mask]
+                    unique_y_is = y_i.sum(axis=0).nonzero()
+                    if len(unique_y_is) < 2:
+                        continue
+
+                    # if there are multiple labels, choose a random pair
+                    y_i1, y_i2 = unique_y_is[torch.randperm(len(unique_y_is))][:2] 
+                    mask2_1 = y_i[:, y_i1].squeeze().bool()
+                    mask2_2 = y_i[:, y_i2].squeeze().bool()
+                    all_mix_x_i, all_mix_y_i = fn(alpha, x_i[mask2_1], x_i[mask2_2], y_i[mask2_1], y_i[mask2_2])
+                    all_mix_x.append(all_mix_x_i)
+                    all_mix_y.append(all_mix_y_i)
+
+            end_len = sum(list(map(len, all_mix_x)))
+            # each attribute only has one unique label
+            if end_len == start_len:
+                return x, y
+
+        all_mix_x = torch.cat(all_mix_x, dim=0)
+        all_mix_y = torch.cat(all_mix_y, dim=0)
+
+        shuffle_idx = torch.randperm(len(all_mix_x))
+        return all_mix_x[shuffle_idx][:bs], all_mix_y[shuffle_idx][:bs]
+
+    @staticmethod
+    def _rand_bbox(size, lam):
+        W = size[2]
+        H = size[3]
+        cut_rat = np.sqrt(1. - lam)
+        cut_w = np.int(W * cut_rat)
+        cut_h = np.int(H * cut_rat)
+
+        # uniform
+        cx = np.random.randint(W)
+        cy = np.random.randint(H)
+
+        bbx1 = np.clip(cx - cut_w // 2, 0, W)
+        bby1 = np.clip(cy - cut_h // 2, 0, H)
+        bbx2 = np.clip(cx + cut_w // 2, 0, W)
+        bby2 = np.clip(cy + cut_h // 2, 0, H)
+
+        return bbx1, bby1, bbx2, bby2
+
+    @staticmethod
+    def _mix_up(alpha, x1, x2, y1, y2):
+        # y1, y2 should be one-hot label, which means the shape of y1 and y2 should be [bsz, n_classes]
+        length = min(len(x1), len(x2))
+        x1 = x1[:length]
+        x2 = x2[:length]
+        y1 = y1[:length]
+        y2 = y2[:length]
+
+        n_classes = y1.shape[1]
+        bsz = len(x1)
+        l = np.random.beta(alpha, alpha, [bsz, 1])
+        if len(x1.shape) == 4:
+            l_x = np.tile(l[..., None, None], (1, *x1.shape[1:]))
+        else:
+            l_x = np.tile(l, (1, *x1.shape[1:]))
+        l_y = np.tile(l, [1, n_classes])
+
+        # mixed_input = l * x + (1 - l) * x2
+        mixed_x = torch.tensor(l_x, dtype=torch.float32).to(x1.device) * x1 + torch.tensor(1-l_x, dtype=torch.float32).to(x2.device) * x2
+        mixed_y = torch.tensor(l_y, dtype=torch.float32).to(y1.device) * y1 + torch.tensor(1-l_y, dtype=torch.float32).to(y2.device) * y2
+
+        return mixed_x, mixed_y
+
+    def _cut_mix_up(self, alpha, x1, x2, y1, y2):
+        length = min(len(x1), len(x2))
+        x1 = x1[:length]
+        x2 = x2[:length]
+        y1 = y1[:length]
+        y2 = y2[:length]
+
+        input = torch.cat([x1, x2])
+        target = torch.cat([y1, y2])
+
+        rand_index = torch.cat([torch.arange(len(y2)) + len(y1), torch.arange(len(y1))])
+
+        lam = np.random.beta(alpha, alpha)
+        target_a = target
+        target_b = target[rand_index]
+        bbx1, bby1, bbx2, bby2 = self._rand_bbox(input.size(), lam)
+        input[:, :, bbx1:bbx2, bby1:bby2] = input[rand_index, :, bbx1:bbx2, bby1:bby2]
+        # adjust lambda to exactly match pixel ratio
+        lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (input.size()[-1] * input.size()[-2]))
+
+        return input, lam * target_a + (1-lam) * target_b
+
+    def _compute_loss(self, i, x, y, a, step):
+        s = np.random.random() <= self.hparams['LISA_p_sel']
+        y_ohe = self._to_ohe(y)
+        if self.data_type == "text":
+            feats = self.featurizer(x)
+            mixed_feats, mixed_y = self._lisa_mixup_data(s, a, feats, y_ohe, self.hparams["LISA_alpha"])
+            predictions = self.classifier(mixed_feats)
+        else:
+            mixed_x, mixed_y = self._lisa_mixup_data(s, a, x, y_ohe, self.hparams["LISA_alpha"])
+            predictions = self.predict(mixed_x)
+
+        mixed_y_float = mixed_y.type(torch.FloatTensor)
+        loss_value = F.cross_entropy(predictions, mixed_y_float.to(predictions.device))
+        return loss_value
