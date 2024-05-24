@@ -189,7 +189,10 @@ class GroupDRO(ERM):
         print("a", a) #list 
         a= torch.tensor(a, device=y.device)
         # a = a.astype(y.type)
+        print("return groups", self.return_groups(y, a))
         for idx_g, idx_samples in self.return_groups(y, a):
+            print("losses", losses[idx_samples])
+            print("self.q", self.q[idx_g])
             self.q[idx_g] *= (self.hparams["groupdro_eta"] * losses[idx_samples].mean()).exp().item()
 
         self.q /= self.q.sum()
