@@ -172,3 +172,27 @@ class IRM(ERM):
         self.update_count += 1
         return loss_value
     
+class GroupDRO(ERM):
+    """
+    Group DRO minimizes the error at the worst group [https://arxiv.org/pdf/1911.08731.pdf]
+    """
+    def __init__(self, data_type, input_shape, num_classes, num_attributes, num_examples, hparams, grp_sizes=None):
+        super(GroupDRO, self).__init__(
+            data_type, input_shape, num_classes, num_attributes, num_examples, hparams, grp_sizes)
+        self.register_buffer(
+            "q", torch.ones(self.num_classes * self.num_attributes).cuda())
+
+    def _compute_loss(self, i, x, y, a, step):
+        losses = self.loss(self.predict(x), y)
+
+        for idx_g, idx_samples in self.return_groups(y, a):
+            self.q[idx_g] *= (self.hparams["groupdro_eta"] * losses[idx_samples].mean()).exp().item()
+
+        self.q /= self.q.sum()
+
+        loss_value = 0
+        for idx_g, idx_samples in self.return_groups(y, a):
+            loss_value += self.q[idx_g] * losses[idx_samples].mean()
+
+        return loss_value
+
