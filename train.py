@@ -429,7 +429,7 @@ def main():
                 data_type="images",
                 input_shape=train_dataset[0][0].shape,  # Assuming train_dataset returns (image, label, gender, img_name)
                 num_classes=2,  # Assuming binary classification
-                num_attributes=0,
+                num_attributes=train_dataset.num_attributes,
                 num_examples=len(train_dataset),
                 hparams=hparams_erm,
                 grp_sizes=None,
