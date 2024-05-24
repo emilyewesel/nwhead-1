@@ -841,6 +841,7 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
 
 def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_grad=False, is_train=True, step = 0):
     '''Train/val for one step.'''
+    img, label, gender, id = batch
     all_i, all_x, all_y, all_a = batch
     all_x = all_x.float().to(args.device)
     all_y = all_y.to(args.device)
@@ -854,7 +855,10 @@ def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_g
     optimizer.zero_grad()
     with torch.set_grad_enabled(True):
         output = model.predict(img)
-        loss = model._compute_loss(all_i, img, label, all_a, step)
+        if args.train_method == "GroupDRO":
+            loss = model._compute_loss(all_i, img, label, gender, step)
+        else: 
+            loss = model._compute_loss(all_i, img, label, all_a, step)
         loss.backward()
         optimizer.step()
 
