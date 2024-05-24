@@ -408,8 +408,8 @@ def main():
             })
         if args.train_method == "GroupDRO":
             hparams_erm.update({
-                'groupdro_eta_base': 1e-2,
-                'groupdro_eta': lambda r: 10**r.uniform(-3, -1)
+                'groupdro_eta': 10**np.random.uniform(-2, -1)
+                # 'groupdro_eta': lambda r: 10**r.uniform(-3, -1)
             })
 
 
