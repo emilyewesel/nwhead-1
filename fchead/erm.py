@@ -179,6 +179,8 @@ class GroupDRO(ERM):
     def __init__(self, data_type, input_shape, num_classes, num_attributes, num_examples, hparams, grp_sizes=None):
         super(GroupDRO, self).__init__(
             data_type, input_shape, num_classes, num_attributes, num_examples, hparams, grp_sizes)
+        print("classes", self.num_classes)
+        print("attributes", self.num_attributes)
         self.register_buffer(
             "q", torch.ones(self.num_classes * self.num_attributes).cuda())
 
