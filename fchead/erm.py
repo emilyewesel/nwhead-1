@@ -185,6 +185,7 @@ class GroupDRO(ERM):
     def _compute_loss(self, i, x, y, a, step):
         losses = self.loss(self.predict(x), y)
         print("y", y.type, y)
+        a = np.tensor(a)
         print("a", a.type, a)
         for idx_g, idx_samples in self.return_groups(y, a):
             self.q[idx_g] *= (self.hparams["groupdro_eta"] * losses[idx_samples].mean()).exp().item()
