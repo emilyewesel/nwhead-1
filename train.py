@@ -870,7 +870,7 @@ def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_g
     optimizer.zero_grad()
     with torch.set_grad_enabled(True):
         output = model.predict(img)
-        if args.train_method == "GroupDRO":
+        if args.train_method == "GroupDRO" or True:
             loss = model._compute_loss(all_i, img, label, gender, step)
         else: 
             loss = model._compute_loss(all_i, img, label, all_a, step)
@@ -889,7 +889,7 @@ def erm_step(batch, model, criterion, optimizer, args, lr_scheduler=None, clip_g
 
     return {'loss': loss.cpu().detach().numpy(),
             'acc': accuracy,
-            'balanced_acc': balanced_accuracy,
+            'balanced_acc': balanced_accuracy*100,
             'prob': output.exp(), 
             'batch_size': len(all_x), 
             'gt': label}
