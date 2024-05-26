@@ -531,7 +531,7 @@ def main():
 
     if args.use_wandb:
         initialize_wandb(args)
-        print("initilaized wandb")
+        print("initialized wandb")
 
     # Training loop
     start_epoch = 1
