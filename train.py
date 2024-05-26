@@ -417,7 +417,7 @@ def main():
             hparams_erm.update({'LISA_alpha': 10**np.random.uniform(-1, 1),
                                 'LISA_p_sel': 0.5*np.random.uniform(0, 1),
                                 'LISA_mixup_method': np.random.choice(['mixup', 'cutmix'])})
-        if args.train_methd == "CORAL":
+        if args.train_method == "CORAL":
             hparams_erm.update({'mmd_gamma': 10**np.random.uniform(-1, 1)})
 
         if args.train_method =="erm":
