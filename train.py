@@ -25,6 +25,7 @@ from fchead.erm import ERM
 from fchead.erm import IRM
 from fchead.erm import GroupDRO
 from fchead.erm import LISA
+from fchead.erm import CORAL
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
@@ -385,7 +386,7 @@ def main():
         network = FCNet(featurizer, 
                         feat_dim, 
                         num_classes)
-    elif args.train_method == "erm" or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA":
+    elif args.train_method == "erm" or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA" or args.train_method == "CORAL":
         # Define the hyperparameters for the ERM network
         hparams_erm = {
             "mlp_width": 512,
@@ -416,7 +417,8 @@ def main():
             hparams_erm.update({'LISA_alpha': 10**np.random.uniform(-1, 1),
                                 'LISA_p_sel': 0.5*np.random.uniform(0, 1),
                                 'LISA_mixup_method': np.random.choice(['mixup', 'cutmix'])})
-
+        if args.train_methd == "CORAL":
+            hparams_erm.update({'mmd_gamma': 10**np.random.uniform(-1, 1)})
 
         if args.train_method =="erm":
             # Instantiate the ERM network
@@ -441,6 +443,16 @@ def main():
                 )
         elif args.train_method == "LISA":
             network = LISA(
+                data_type="images",
+                input_shape=train_dataset[0][0].shape,  # Assuming train_dataset returns (image, label, gender, img_name)
+                num_classes=2,  # Assuming binary classification
+                num_attributes=2,
+                num_examples=len(train_dataset),
+                hparams=hparams_erm,
+                grp_sizes=None,
+                )
+        elif args.train_method == "CORAL":
+            network = CORAL(
                 data_type="images",
                 input_shape=train_dataset[0][0].shape,  # Assuming train_dataset returns (image, label, gender, img_name)
                 num_classes=2,  # Assuming binary classification
@@ -569,7 +581,7 @@ def main():
     
         print("Train loss={:.6f}, train acc={:.6f}, lr={:.6f}".format(
             args.metrics['loss:train'].result(), args.metrics['acc:train'].result(), scheduler.get_last_lr()[0]))
-        if args.train_method == 'fchead' or args.train_method == 'erm' or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA":
+        if args.train_method == 'fchead' or args.train_method == 'erm' or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA" or args.train_method == "CORAL":
             print("Val loss={:.6f}, val acc={:.6f}".format(
                 args.val_metrics['loss:val'].result(), args.val_metrics['acc:val'].result()))
             print()
@@ -628,7 +640,7 @@ def train_epoch(train_loader, network, criterion, optimizer, args):
     train_csv_output_dict = []
     for i, batch in tqdm(enumerate(train_loader), 
         total=min(len(train_loader), args.num_steps_per_epoch)):
-        if args.train_method == 'fchead' or args.train_method == "erm" or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA":
+        if args.train_method == 'fchead' or args.train_method == "erm" or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA" or args.train_method == "CORAL":
             if args.train_method == 'fchead':
                 step_res = fc_step(batch, network, criterion, optimizer, args, is_train=True)
             else: 
@@ -683,10 +695,10 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         label = label.to(args.device)
         gender = gender.to(args.device)
 
-        if args.train_method == 'fchead' or args.train_method == 'erm' or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA":
+        if args.train_method == 'fchead' or args.train_method == 'erm' or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA" or args.train_method == "CORAL":
             if args.train_method == 'fchead':
                 step_res = fc_step(batch, network, criterion, optimizer, args, is_train=False)
-            elif args.train_method == 'erm' or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA":
+            elif args.train_method == 'erm' or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA" or args.train_method == "CORAL":
                 step_res = erm_step(batch, network, criterion, optimizer, args, lr_scheduler=None, clip_grad=True, is_train=False)
             args.val_metrics['loss:val'].update_state(step_res['loss'], step_res['batch_size'])
             args.val_metrics['acc:val'].update_state(step_res['acc'], step_res['batch_size'])
@@ -725,7 +737,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
             args.val_metrics['ece:val'].update_state(overall_ece, 1)
             args.val_metrics['f1:val'].update_state(f1_score(step_res['gt'].cpu().numpy(), predictions, average='weighted'), step_res['batch_size'])
             args.val_metrics['tpr:val'].update_state(metric.tpr_score(step_res['gt'].cpu().numpy(), predictions), step_res['batch_size'])
-            if args.train_method == 'erm' or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA":
+            if args.train_method == 'erm' or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA" or args.train_method == "CORAL":
                 args.val_metrics['auc:val'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].detach().cpu().numpy()[:,1]), step_res['batch_size'])
             else:
                 args.val_metrics['auc:val'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
@@ -796,7 +808,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
 
     female_ece = (ECELoss()(female_probs, female_gts) * 100).item()
     
-    if args.train_method == 'fchead' or args.train_method == 'erm' or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA":
+    if args.train_method == 'fchead' or args.train_method == 'erm' or args.train_method == "irm" or args.train_method == "GroupDRO" or args.train_method == "LISA" or args.train_method == "CORAL":
         args.val_metrics[f'acc:val:male'].update_state(male_acc * 100, 1)
         args.val_metrics[f'ece:val:male'].update_state(male_ece, 1)
         args.val_metrics[f'acc:val:female'].update_state(female_acc * 100, 1)
