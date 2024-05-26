@@ -235,6 +235,7 @@ class LISA(ERM):
 
                 for y_i in range(self.num_classes):
                     mask = y[:, y_i].squeeze().bool()
+                    a = a.to(mask.device)
                     x_i, y_i, a_i = x[mask], y[mask], a[mask]
                     unique_a_is = torch.unique(a_i)
                     if len(unique_a_is) < 2:
