@@ -101,7 +101,7 @@ class ChexpertDataset(Dataset):
         if race_instead:
             
             patient_id = re.search(r'patient(\d+)', 'train/patient59348/study2/view1_frontal.jpg').group(1) if re.search(r'patient(\d+)', 'train/patient59348/study2/view1_frontal.jpg') else None
-            white_value = self.meta_df.loc[self.meta_df['PATIENT'] == patient_id, 'White'].values[0]
+            white_value = self.meta_df.loc[self.meta_df['PATIENT'] == patient_id, 'White'].values
             gender = white_value
         if self.transform:
             image = self.transform(image)
