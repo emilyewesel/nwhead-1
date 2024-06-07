@@ -51,6 +51,10 @@ class ChexpertDataset(Dataset):
         self.meta_df = pd.read_csv("metadata.csv") 
         print("self df", self.df.head())
         print("meta df", self.meta_df.head())
+        self.df['PATIENT'] = self.df['Path'].apply(lambda x: x.split('/')[2])
+        # Merge the dataframes on the PATIENT column
+        merged_df = pd.merge(self.df, self.meta_df, on='PATIENT')
+
         
         
         if train_class == "Cardiomegaly" and correct_support_only and train:
@@ -89,11 +93,13 @@ class ChexpertDataset(Dataset):
         print("gender", len(self.genders))
         race_instead = True
         if race_instead:
-            self.meta_df = pd.read_csv("metadata.csv") 
-            if train:
-                self.genders = self.meta_df.iloc[:, 5].dropna().map({True: 1, False: 0}).astype(int).tolist()[:27254]
-            else: 
-                self.genders = self.meta_df.iloc[:, 5].dropna().map({True: 1, False: 0}).astype(int).tolist()[:202]
+            # self.meta_df = pd.read_csv("metadata.csv") 
+            self.genders = self.merged_df['White'].dropna().map({True: 1, False: 0}).astype(int).tolist()
+
+            # if train:
+            #     self.genders = self.meta_df.iloc[:, 5].dropna().map({True: 1, False: 0}).astype(int).tolist()[:27254]
+            # else: 
+            #     self.genders = self.meta_df.iloc[:, 5].dropna().map({True: 1, False: 0}).astype(int).tolist()[:202]
         print("race", len(self.genders))
 
 
