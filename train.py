@@ -106,7 +106,7 @@ class ChexpertDataset(Dataset):
 
         label = self.targets[idx]
         gender = self.genders[idx]
-        print("gender", gender)
+        # print("gender", gender)
         race_instead = True 
         if race_instead:
             patient_id = re.search(r'patient(\d+)', img_name_base).group(1) if re.search(r'patient(\d+)', img_name_base) else None
@@ -118,7 +118,7 @@ class ChexpertDataset(Dataset):
                 white_value = white_value[0]
             white_value = int(white_value)
             gender = white_value
-        print("race", gender)
+        # print("race", gender)
 
         if self.transform:
             image = self.transform(image)
