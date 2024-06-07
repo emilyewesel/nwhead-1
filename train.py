@@ -89,9 +89,9 @@ class ChexpertDataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, idx):
-        img_name = self.df.iloc[idx, 0].split('/', 1)[-1]
-        print("image name is", img_name)
-        img_name = os.path.join(self.base_path, img_name)
+        img_name_base = self.df.iloc[idx, 0].split('/', 1)[-1]
+
+        img_name = os.path.join(self.base_path, img_name_base)
         image = Image.open(img_name).convert('RGB')  
         self.meta_df = pd.read_csv("metadata.csv") 
 
@@ -100,7 +100,7 @@ class ChexpertDataset(Dataset):
         race_instead = True 
         if race_instead:
             
-            patient_id = re.search(r'patient(\d+)', 'train/patient59348/study2/view1_frontal.jpg').group(1) if re.search(r'patient(\d+)', 'train/patient59348/study2/view1_frontal.jpg') else None
+            patient_id = re.search(r'patient(\d+)', img_name_base).group(1) if re.search(r'patient(\d+)', img_name_base) else None
             white_value = self.meta_df.loc[self.meta_df['PATIENT'] == patient_id, 'White'].values
             gender = white_value
         if self.transform:
