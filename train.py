@@ -48,8 +48,6 @@ class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardiomegaly", fc_results= None, correct_support_only=False):
         self.df = pd.read_csv(csv_file)
         self.meta_df = pd.read_csv("metadata.csv") 
-        print("meta_df", self.meta_df)
-
         
         if train_class == "Cardiomegaly" and correct_support_only and train:
             
@@ -91,13 +89,16 @@ class ChexpertDataset(Dataset):
 
     def __getitem__(self, idx):
         img_name = self.df.iloc[idx, 0].split('/', 1)[-1]
+        print("image name is", img_name)
         img_name = os.path.join(self.base_path, img_name)
         image = Image.open(img_name).convert('RGB')  
 
         label = self.targets[idx]
         gender = self.genders[idx]
-        print("idx is", idx)
-        print("image name is", img_name)
+        race_instead = False 
+        if race_instead:
+            
+        
 
 
         if self.transform:
