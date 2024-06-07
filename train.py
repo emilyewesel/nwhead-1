@@ -106,13 +106,14 @@ class ChexpertDataset(Dataset):
 
         label = self.targets[idx]
         gender = self.genders[idx]
+        print("gender", gender)
         race_instead = False 
         if race_instead:
             patient_id = re.search(r'patient(\d+)', img_name_base).group(1) if re.search(r'patient(\d+)', img_name_base) else None
             patient_id = "patient" + patient_id
             white_value = self.meta_df.loc[self.meta_df['PATIENT'] == patient_id, 'White'].values
             gender = white_value
-
+        print("race", gender)
 
         if self.transform:
             image = self.transform(image)
@@ -862,8 +863,8 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:male'].update_state(male_balanced_acc*100, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:female'].update_state(female_balanced_acc * 100, 1)
-        args.val_metrics[f'balanced_acc:{mode}:nonwhite'].update_state(male_balanced_acc*100, 1)
-        args.val_metrics[f'balanced_acc:{mode}:white'].update_state(female_balanced_acc * 100, 1)
+        args.val_metrics[f'balanced_acc:val:{mode}:nonwhite'].update_state(male_balanced_acc*100, 1)
+        args.val_metrics[f'balanced_acc:val:{mode}:white'].update_state(female_balanced_acc * 100, 1)
         args.val_metrics[f'f1:val:{mode}:male'].update_state(f1_score(male_gts_np, male_predictions, average='weighted'), step_res['batch_size'])
         args.val_metrics[f'tpr:val:{mode}:male'].update_state(metric.tpr_score(male_gts_np, male_predictions), step_res['batch_size'])
         args.val_metrics[f'auc:val:{mode}:male'].update_state(metric.auc_score(male_gts_np,  male_probs_np[:,1]), step_res['batch_size'])
