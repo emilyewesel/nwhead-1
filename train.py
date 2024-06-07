@@ -331,6 +331,8 @@ def main():
         print("\nFemale class counts:")
         print("Positive:", class_counts['female']['positive'])
         print("Negative:", class_counts['female']['negative'])
+    elif args.dataset == "mimic":
+        train_csv = "/dataNAS/people/paschali/datasets/mimic-cxr/mimic-cxr"
 
     elif args.dataset == 'flower':
         train_dataset = datasets.Flowers102(args.data_dir, 'train', transform_train, download=True)
