@@ -714,6 +714,28 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
 
     for i, batch in tqdm(enumerate(val_loader), 
         total=min(len(val_loader), args.num_val_steps_per_epoch)):
+        print(f"Processing batch {i}")
+        
+        try:
+            img, label, gender, id = batch
+            
+            # Print shapes and types of batch contents
+            print(f"Image shape: {img.shape}, dtype: {img.dtype}")
+            print(f"Label shape: {label.shape}, dtype: {label.dtype}")
+            print(f"Gender shape: {gender.shape}, dtype: {gender.dtype}")
+            print(f"ID: {id}")
+            
+            img = img.float().to(args.device)
+            label = label.to(args.device)
+            gender = gender.to(args.device)
+            
+            # Print shapes and types after moving to device
+            print(f"Image shape after to(device): {img.shape}, dtype: {img.dtype}")
+            print(f"Label shape after to(device): {label.shape}, dtype: {label.dtype}")
+            print(f"Gender shape after to(device): {gender.shape}, dtype: {gender.dtype}")
+        except Exception as e:
+            print(f"Error processing batch {i}: {e}")
+            raise e
         
         img, label, gender, id = batch
         img = img.float().to(args.device)
