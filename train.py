@@ -99,7 +99,6 @@ class ChexpertDataset(Dataset):
         gender = self.genders[idx]
         race_instead = True 
         if race_instead:
-            
             patient_id = re.search(r'patient(\d+)', img_name_base).group(1) if re.search(r'patient(\d+)', img_name_base) else None
             white_value = self.meta_df.loc[self.meta_df['PATIENT'] == patient_id, 'White'].values
             gender = white_value
@@ -754,6 +753,7 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
                 args.val_metrics['auc:val'].update_state(metric.auc_score(step_res['gt'].cpu().numpy(), step_res['prob'].cpu().numpy()[:,1]), step_res['batch_size'])
 
             for j in range(len(gender)):
+                print("GENDER", gender[j])
                 gender_str = 'male' if gender[j] == 0 else 'female'
                 probs[gender_str].append(step_res['prob'][j].unsqueeze(0))
                 gts[gender_str].append(step_res['gt'][j].unsqueeze(0))
