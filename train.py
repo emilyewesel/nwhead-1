@@ -107,13 +107,13 @@ class ChexpertDataset(Dataset):
         label = self.targets[idx]
         gender = self.genders[idx]
         print("gender", gender)
-        race_instead = False 
+        race_instead = True 
         if race_instead:
             patient_id = re.search(r'patient(\d+)', img_name_base).group(1) if re.search(r'patient(\d+)', img_name_base) else None
             patient_id = "patient" + patient_id
             white_value = self.meta_df.loc[self.meta_df['PATIENT'] == patient_id, 'White'].values
-            gender = white_value
-        print("race", gender)
+            gender2 = white_value
+        print("race", gender2)
 
         if self.transform:
             image = self.transform(image)
