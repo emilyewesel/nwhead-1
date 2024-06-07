@@ -83,11 +83,12 @@ class ChexpertDataset(Dataset):
         self.transform = transform
         self.targets = torch.tensor(self.df[train_class].values, dtype=torch.long)  
         self.genders = self.df.iloc[:, 1].dropna().map({'Female': 1, 'Male': 0}).astype(int).tolist()
+        print("gender", len(self.genders))
         race_instead = True
         if race_instead:
             self.meta_df = pd.read_csv("metadata.csv") 
             self.genders = self.meta_df.iloc[:, 5].dropna().map({True: 1, False: 0}).astype(int).tolist()
-
+        print("race", len(self.genders))
 
 
     def __len__(self):
