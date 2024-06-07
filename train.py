@@ -83,6 +83,10 @@ class ChexpertDataset(Dataset):
         self.transform = transform
         self.targets = torch.tensor(self.df[train_class].values, dtype=torch.long)  
         self.genders = self.df.iloc[:, 1].dropna().map({'Female': 1, 'Male': 0}).astype(int).tolist()
+        race_instead = True
+        if race_instead and False:
+            self.genders = self.meta_df.iloc[:, 5].dropna().map({True: 1, False: 0}).astype(int).tolist()
+
 
 
     def __len__(self):
@@ -99,11 +103,13 @@ class ChexpertDataset(Dataset):
         gender = self.genders[idx]
         race_instead = True 
         if race_instead:
+            
             patient_id = re.search(r'patient(\d+)', img_name_base).group(1) if re.search(r'patient(\d+)', img_name_base) else None
+            print("paint the town red", patient_id)
             white_value = self.meta_df.loc[self.meta_df['PATIENT'] == patient_id, 'White'].values
             gender = white_value
-            
-            print(gender)
+
+
         if self.transform:
             image = self.transform(image)
 
