@@ -48,7 +48,7 @@ def crop_path_train(path):
 class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardiomegaly", fc_results= None, correct_support_only=False):
         self.df = pd.read_csv(csv_file)
-        self.meta_df = pd.read_csv("metadata.csv") 
+        
         
         if train_class == "Cardiomegaly" and correct_support_only and train:
             
@@ -93,11 +93,13 @@ class ChexpertDataset(Dataset):
         print("image name is", img_name)
         img_name = os.path.join(self.base_path, img_name)
         image = Image.open(img_name).convert('RGB')  
+        self.meta_df = pd.read_csv("metadata.csv") 
 
         label = self.targets[idx]
         gender = self.genders[idx]
         race_instead = True 
         if race_instead:
+            
             patient_id = re.search(r'patient(\d+)', 'train/patient59348/study2/view1_frontal.jpg').group(1) if re.search(r'patient(\d+)', 'train/patient59348/study2/view1_frontal.jpg') else None
             white_value = self.meta_df.loc[self.meta_df['PATIENT'] == patient_id, 'White'].values[0]
             gender = white_value
@@ -845,8 +847,8 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
         args.val_metrics[f'ece:val:{mode}:female'].update_state(female_ece, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:male'].update_state(male_balanced_acc*100, 1)
         args.val_metrics[f'balanced_acc:val:{mode}:female'].update_state(female_balanced_acc * 100, 1)
-        args.val_metrics[f'balanced_acc:val:nonwhite'].update_state(male_balanced_acc*100, 1)
-        args.val_metrics[f'balanced_acc:val:white'].update_state(female_balanced_acc * 100, 1)
+        args.val_metrics[f'balanced_acc:{mode}:nonwhite'].update_state(male_balanced_acc*100, 1)
+        args.val_metrics[f'balanced_acc:{mode}:white'].update_state(female_balanced_acc * 100, 1)
         args.val_metrics[f'f1:val:{mode}:male'].update_state(f1_score(male_gts_np, male_predictions, average='weighted'), step_res['batch_size'])
         args.val_metrics[f'tpr:val:{mode}:male'].update_state(metric.tpr_score(male_gts_np, male_predictions), step_res['batch_size'])
         args.val_metrics[f'auc:val:{mode}:male'].update_state(metric.auc_score(male_gts_np,  male_probs_np[:,1]), step_res['batch_size'])
