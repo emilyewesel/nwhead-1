@@ -47,6 +47,9 @@ def crop_path_train(path):
 class ChexpertDataset(Dataset):
     def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardiomegaly", fc_results= None, correct_support_only=False):
         self.df = pd.read_csv(csv_file)
+        self.meta_df = pd.read_csv("metadata.csv") 
+        print("meta_df", self.meta_df)
+
         
         if train_class == "Cardiomegaly" and correct_support_only and train:
             
@@ -93,6 +96,9 @@ class ChexpertDataset(Dataset):
 
         label = self.targets[idx]
         gender = self.genders[idx]
+        print("idx is", idx)
+        print("image name is", img_name)
+
 
         if self.transform:
             image = self.transform(image)
