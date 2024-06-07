@@ -709,9 +709,12 @@ def eval_epoch(val_loader, network, criterion, optimizer, args, mode='random'):
     gts = {'male': [], 'female': []}
     # I want to create a dataframe to store the predictions, gt, scores for posthoc analysis
     csv_output_dict = [] 
+    print(f"Total steps per epoch: {min(len(val_loader), args.num_val_steps_per_epoch)}")
+    print(f"val_loader length: {len(val_loader)}")
 
     for i, batch in tqdm(enumerate(val_loader), 
         total=min(len(val_loader), args.num_val_steps_per_epoch)):
+        
         img, label, gender, id = batch
         img = img.float().to(args.device)
         label = label.to(args.device)
