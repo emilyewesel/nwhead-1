@@ -96,7 +96,7 @@ class ChexpertDataset(Dataset):
         label = self.targets[idx]
         gender = self.genders[idx]
         race_instead = False 
-        if race_instead:
+        # if race_instead:
             
         
 
