@@ -96,6 +96,7 @@ class ChexpertDataset(Dataset):
             # self.meta_df = pd.read_csv("metadata.csv") 
             self.genders = merged_df['White'].dropna().map({True: 1, False: 0}).astype(int).tolist()
             if train: 
+                print(len(self.genders))
                 self.genders = self.genders[:27254]
             else: 
                 self.genders = self.genders[:202]
@@ -117,7 +118,7 @@ class ChexpertDataset(Dataset):
         self.meta_df = pd.read_csv("metadata.csv") 
 
         label = self.targets[idx]
-        gender = self.genders[idx]
+        
         # print("gender", gender)
         race_instead = True 
         if race_instead:
@@ -130,6 +131,8 @@ class ChexpertDataset(Dataset):
                 white_value = white_value[0]
             white_value = int(white_value)
             gender = white_value
+        else: 
+            gender = self.genders[idx]
         # print("race", gender)
 
         if self.transform:
@@ -147,7 +150,7 @@ class ChexpertDataset(Dataset):
     def compute_class_weights2(self):
         class_counts_male = Counter()
         class_counts_female = Counter()
-
+        # print("hopefully these are the same", len(self.targets.numpy()), len(self.genders))
         for label, gender in zip(self.targets.numpy(), self.genders):
             if gender == 0:  # Male or of color 
                 class_counts_male[label] += 1
