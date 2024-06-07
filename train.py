@@ -105,7 +105,7 @@ class ChexpertDataset(Dataset):
         if race_instead:
             
             patient_id = re.search(r'patient(\d+)', img_name_base).group(1) if re.search(r'patient(\d+)', img_name_base) else None
-            print("paint the town red", patient_id)
+            patient_id = "patient" + patient_id
             white_value = self.meta_df.loc[self.meta_df['PATIENT'] == patient_id, 'White'].values
             gender = white_value
 
