@@ -94,7 +94,7 @@ class ChexpertDataset(Dataset):
         race_instead = True
         if race_instead:
             # self.meta_df = pd.read_csv("metadata.csv") 
-            self.genders = self.merged_df['White'].dropna().map({True: 1, False: 0}).astype(int).tolist()
+            self.genders = merged_df['White'].dropna().map({True: 1, False: 0}).astype(int).tolist()
 
             # if train:
             #     self.genders = self.meta_df.iloc[:, 5].dropna().map({True: 1, False: 0}).astype(int).tolist()[:27254]
