@@ -22,11 +22,11 @@ from util import metric
 from model import load_model
 from nwhead.nw import NWNet
 from fchead.fc import FCNet
-from fchead.erm import ERM
-from fchead.erm import IRM
-from fchead.erm import GroupDRO
-from fchead.erm import LISA
-from fchead.erm import CORAL
+from fchead.baselines import ERM
+from fchead.baselines import IRM
+from fchead.baselines import GroupDRO
+from fchead.baselines import LISA
+from fchead.baselines import CORAL
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
@@ -46,29 +46,23 @@ def crop_path_train(path):
 
 
 class ChexpertDataset(Dataset):
-    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardiomegaly", fc_results= None, correct_support_only=False):
+    def __init__(self, csv_file, train_base_path, test_base_path, transform=None, train=True, inject_underdiagnosis_bias=False, train_class = "Cardiomegaly", fc_results= None, correct_support_only=False, race_instead = False):
         self.df = pd.read_csv(csv_file)
         self.meta_df = pd.read_csv("metadata.csv") 
-        print("self df", self.df.head())
-        print("meta df", self.meta_df.head())
-        self.df['PATIENT'] = self.df['Path'].apply(lambda x: x.split('/')[2])
-        # Merge the dataframes on the PATIENT column
-        merged_df = pd.merge(self.df, self.meta_df, on='PATIENT')
 
-        
-        
+        self.df['PATIENT'] = self.df['Path'].apply(lambda x: x.split('/')[2])
+        # Merge the dataframes on the PATIENT column to include the metadata
+        merged_df = pd.merge(self.df, self.meta_df, on='PATIENT')
+        self.race_instead = race_instead
+
+
+        #only include examples identified correctly by the fchead
         if train_class == "Cardiomegaly" and correct_support_only and train:
-            
             self.df_fc_results = pd.read_csv(fc_results)
-            
             self.df_fc_results['merge_Path'] = self.df_fc_results['Path'].apply(crop_path_results)
             self.df['merge_Path'] = self.df['Path'].apply(crop_path_train)
-            print("emily original", self.df["merge_Path"])
-            print("emily fc", self.df_fc_results["merge_Path"])
             merged = pd.merge(self.df, self.df_fc_results, on='merge_Path', how='inner')
-            print("emily merged", merged.head())
             filtered_df = merged[merged['Ground Truth'] == merged['Prediction']]
-            print("emily filtered", filtered_df.head())
             self.df = filtered_df
 
         if train_class == "No Finding":
@@ -76,6 +70,7 @@ class ChexpertDataset(Dataset):
         else:
             self.df = self.df[self.df[train_class].isin([0, 1])]
         
+        #filtering to get only the frontal x-rays
         self.df = self.df[self.df['Frontal/Lateral'] == 'Frontal']
         
         self.df.dropna(subset=["Sex"], inplace=True)
@@ -91,7 +86,6 @@ class ChexpertDataset(Dataset):
         self.targets = torch.tensor(self.df[train_class].values, dtype=torch.long)  
         self.genders = self.df.iloc[:, 1].dropna().map({'Female': 1, 'Male': 0}).astype(int).tolist()
         print("gender", len(self.genders))
-        race_instead = True
         if race_instead:
             # self.meta_df = pd.read_csv("metadata.csv") 
             self.genders = merged_df['White'].dropna().map({True: 1, False: 0}).astype(int).tolist()
@@ -100,11 +94,6 @@ class ChexpertDataset(Dataset):
                 self.genders = self.genders[:27254]
             else: 
                 self.genders = self.genders[:202]
-            # if train:
-            #     self.genders = self.meta_df.iloc[:, 5].dropna().map({True: 1, False: 0}).astype(int).tolist()[:27254]
-            # else: 
-            #     self.genders = self.meta_df.iloc[:, 5].dropna().map({True: 1, False: 0}).astype(int).tolist()[:202]
-        print("race", len(self.genders))
 
 
     def __len__(self):
@@ -119,9 +108,8 @@ class ChexpertDataset(Dataset):
 
         label = self.targets[idx]
         
-        # print("gender", gender)
         race_instead = True 
-        if race_instead:
+        if self.race_instead:
             patient_id = re.search(r'patient(\d+)', img_name_base).group(1) if re.search(r'patient(\d+)', img_name_base) else None
             patient_id = "patient" + patient_id
             white_value = self.meta_df.loc[self.meta_df['PATIENT'] == patient_id, 'White'].values
@@ -133,7 +121,6 @@ class ChexpertDataset(Dataset):
             gender = white_value
         else: 
             gender = self.genders[idx]
-        # print("race", gender)
 
         if self.transform:
             image = self.transform(image)
@@ -205,6 +192,8 @@ class Parser(argparse.ArgumentParser):
                   default=1964, help='Seed')
         self.add_argument('--weight_decay', type=float,
                   default=1e-4, help='Weight decay')
+        self.add_argument('--race_instead', type=bool,
+                  default=1e-4, help='Should the class of each patient be race instead of gender? True if yes, False if no.')
         self.add_argument('--optimizer', type=str,
                   default='sgd', help='Weight decay') # options: sgd, adam, adamw
         self.add_argument('--arch', type=str, default='resnet18')
@@ -255,7 +244,8 @@ class Parser(argparse.ArgumentParser):
                         wd=args.weight_decay,
                         seed=args.seed,
                         train_class=args.train_class,
-                        correct_support_only = args.correct_support_only
+                        correct_support_only = args.correct_support_only, 
+                        race_instead = args.race_instead
                       ))
         args.ckpt_dir = os.path.join(args.run_dir, 'checkpoints')
         args.output_csv_dir = os.path.join(args.run_dir, 'output_csv') 
@@ -348,9 +338,9 @@ def main():
         baase = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
         baase2 = "/dataNAS/people/paschali/datasets/chexpert-public/chexpert-public/"
         fc_head_results = "/dataNAS/people/ewesel1/nwhead-1/saved_models/methodfchead_datasetchexpert_archresnet18_pretrainedFalse_lr0.0001_bs64_projdim0_nshot8_nwayNone_wd0.0001_seed1964_classCardiomegaly/output_csv/train_model_output_epoch_26.csv"
-        train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train_class=args.train_class, train=True, fc_results=fc_head_results, correct_support_only=False)
-        train_dataset_correct_only = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train_class=args.train_class, train=True, fc_results=fc_head_results, correct_support_only=True)
-        val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train_class=args.train_class, train=False)
+        train_dataset = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train_class=args.train_class, train=True, fc_results=fc_head_results, correct_support_only=False, race_instead=args.race_instead)
+        train_dataset_correct_only = ChexpertDataset(csv_file=train_csv, train_base_path=baase, test_base_path=baase2, transform=transform_train, train_class=args.train_class, train=True, fc_results=fc_head_results, correct_support_only=True, race_instead = race_instead)
+        val_dataset = ChexpertDataset(csv_file=test_csv, train_base_path=baase, test_base_path=baase2, transform=transform_test, train_class=args.train_class, train=False, race_instead=args.race_instead)
         print("initialized datasets")
         train_dataset.num_classes = 2
         
