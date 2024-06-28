@@ -898,7 +898,6 @@ def fc_step(batch, network, criterion, optimizer, args, is_train=True):
             optimizer.step()
         acc = metric.acc(output.argmax(-1), label)
         balanced_acc = metric.balanced_acc_fcn(output.argmax(-1), label)
-        #emily use prob and gt to create the dictionary
 
     return {'loss': loss.cpu().detach().numpy(), \
             'acc': acc * 100, \
